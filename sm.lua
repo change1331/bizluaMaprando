@@ -114,11 +114,11 @@ function map(r)
 			pauseloc = loc
 		end
 		loc = mainmemory.readbyte(0x1F5B)
-		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"gray")
+		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"white")
 		gui.drawRectangle(254+mapenum[pauseloc+1][2]*w+2, r*h+2, w-2, h-2,0,"orange")
 	else
 		pauseloc =-1
-		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"gray")
+		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"white")
 	end
 end
 
@@ -171,7 +171,7 @@ bosspos[2]={8,0}
 bosspos[3]={8,1}
 
 mapenum = {}
-mapenum[1]={"C",3,"white"}
+mapenum[1]={"C",3,"purple"}
 mapenum[2]={"B",4,"green"}
 mapenum[3]={"N",5,"red"}
 mapenum[4]={"W",6,"brown"}
