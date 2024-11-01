@@ -67,7 +67,7 @@ end
 function beams()
 	val=mainmemory.read_u16_le(0x09A8)
 	i=1
-	while i <= 0x1000 do
+	while i <= 0x2000 do
 		if (val&i)~=0 and beamenum[i] then
 			draw(beamenum[i])
 			eq=mainmemory.read_u16_le(0x09A6)
@@ -103,6 +103,8 @@ function map(r)
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
 			text({mapenum[i][1], mapenum[i][2], r, mapenum[i][3]})
+		else
+			text({mapenum[i][1], mapenum[i][2], r, "gray"})
 		end
 	end
 	loc = mainmemory.readbyte(0x1F5B)
@@ -174,7 +176,7 @@ mapenum[2]={"B",4,"green"}
 mapenum[3]={"N",5,"red"}
 mapenum[4]={"W",6,"brown"}
 mapenum[5]={"M",7,"blue"}
-mapenum[6]={"T",8,"gray"}
+mapenum[6]={"T",8,"pink"}
 while true do
 	if emu.getsystemid() == "SNES" then
 		if first then
