@@ -1,2 +1,2 @@
 # bizluaMaprando
- Tracker for map rando in bizhawk
+Tracker for map rando in bizhawk
