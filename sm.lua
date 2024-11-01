@@ -11,7 +11,7 @@ function mem(addr, r)
 		c = memory.readbyte(addr+i)
 		i = i + 1
 	end
-	gui.drawString(256,r*h,str)
+	gui.drawString(254,r*h,str)
 end
 function bigletter(addr, r, s)
 	str = ""
@@ -31,22 +31,22 @@ function bigletter(addr, r, s)
 		c = memory.read_u16_le(addr+i)
 		i = i + 2
 	end
-	gui.drawString(256,r*h, s .. str)
+	gui.drawString(254,r*h, s .. str)
 end
 function draw(i)
 	x=i[2]
 	y=i[3]
-	gui.drawImage(i[1],256+x*w,y*h,w,h)
+	gui.drawImage(i[1],254+x*w,y*h,w,h)
 end
 function drawequip(i)
 	x=i[2]
 	y=i[3]
-	gui.drawBox(256+x*w,y*h,256+x*w+w,y*h+h,0x22AAaaAA,0x22AAaaAA)
+	gui.drawRectangle(254+x*w-1,y*h-1,w+2,h+2,0,0x01888888)
 end
 function text(i)
 	x=i[2]
 	y=i[3]
-	gui.drawString(256+x*w,y*h,i[1],i[4],nil,h)
+	gui.drawString(254+x*w,y*h,i[1],i[4],nil,h)
 end
 --items, 09A4
 function items()
@@ -86,23 +86,37 @@ function boss()
 		val=mainmemory.read_u16_le(m)
 		for j = 1,19 do
 			
-			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f and val&f~=0 then
+			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
 				draw({bossenum[j][1], bosspos[i][1], bosspos[i][2]})
+				if val&f==0 then
+					drawequip({bossenum[j][1], bosspos[i][1], bosspos[i][2]})
+				end
 			end
 		end
 	end
 end
 --map D908
+pauseloc=-1
 function map(r)
-	
-	gui.drawString(256,r*h, "MAP:")
-	i=1
-	while i ~= 7 do
+	gui.drawString(254,r*h+2, "MAPS:", "yellow")
+	for i = 1,6 do
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
 			text({mapenum[i][1], mapenum[i][2], r, mapenum[i][3]})
 		end
-		i = i+1
+	end
+	loc = mainmemory.readbyte(0x1F5B)
+	gs=mainmemory.readbyte(0x0998)
+	if gs==0xF then
+		if pauseloc == -1 then
+			pauseloc = loc
+		end
+		loc = mainmemory.readbyte(0x1F5B)
+		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"gray")
+		gui.drawRectangle(254+mapenum[pauseloc+1][2]*w+2, r*h+2, w-2, h-2,0,"orange")
+	else
+		pauseloc =-1
+		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"gray")
 	end
 end
 
