@@ -13,7 +13,6 @@ function mem(addr, r)
 	end
 	gui.drawString(256,r*h,str)
 end
-
 function bigletter(addr, r, s)
 	str = ""
 	c = memory.readbyte(addr)
@@ -34,11 +33,15 @@ function bigletter(addr, r, s)
 	end
 	gui.drawString(256,r*h, s .. str)
 end
-
 function draw(i)
 	x=i[2]
 	y=i[3]
 	gui.drawImage(i[1],256+x*w,y*h,w,h)
+end
+function drawequip(i)
+	x=i[2]
+	y=i[3]
+	gui.drawBox(256+x*w,y*h,256+x*w+w,y*h+h,0x22AAaaAA,0x22AAaaAA)
 end
 function text(i)
 	x=i[2]
@@ -52,6 +55,10 @@ function items()
 	while i <= 0xF000 do
 		if (val&i)~=0 and itemenum[i] then
 			draw(itemenum[i])
+			eq=mainmemory.read_u16_le(0x09A2)
+			if (eq&i)==0 then
+				drawequip(itemenum[i])
+			end
 		end
 		i = i * 2
 	end
@@ -60,9 +67,13 @@ end
 function beams()
 	val=mainmemory.read_u16_le(0x09A8)
 	i=1
-	while i ~= 0x2000 do
+	while i <= 0x1000 do
 		if (val&i)~=0 and beamenum[i] then
 			draw(beamenum[i])
+			eq=mainmemory.read_u16_le(0x09A6)
+			if (eq&i)==0 then
+				drawequip(beamenum[i])
+			end
 		end
 		i = i * 2
 	end
@@ -156,6 +167,7 @@ while true do
 			client.SetGameExtraPadding(0,0,142,0)
 			first = false
 		end
+		gui.clearGraphics()
 		items()
 		beams()
 		boss()
