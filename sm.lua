@@ -1,8 +1,8 @@
-client.SetGameExtraPadding(0,0,142,0)
 
+first=true
 w=16
 h=16
-function mem(addr)
+function mem(addr, r)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 1
@@ -11,10 +11,10 @@ function mem(addr)
 		c = memory.readbyte(addr+i)
 		i = i + 1
 	end
-	gui.drawString(256,175,str)
+	gui.drawString(256,r*h,str)
 end
 
-function bigletter(addr, y, s)
+function bigletter(addr, r, s)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 2
@@ -32,7 +32,7 @@ function bigletter(addr, y, s)
 		c = memory.read_u16_le(addr+i)
 		i = i + 2
 	end
-	gui.drawString(256,185+y, s .. str)
+	gui.drawString(256,r*h, s .. str)
 end
 
 function draw(i)
@@ -49,7 +49,7 @@ end
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	i=1
-	while i ~= 0x4000 do
+	while i <= 0xF000 do
 		if (val&i)~=0 and itemenum[i] then
 			draw(itemenum[i])
 		end
@@ -67,78 +67,104 @@ function beams()
 		i = i * 2
 	end
 end
---boss, D828
-function boss(b)
-	val=mainmemory.read_u16_le(0xD828+(b-1)*2)
-	i=1
-	while i ~= 512 do
-		if (val&i)~=0 and bossenum[b][i] then
-			draw(bossenum[b][i])
+--boss, flag loc 8FEBC0, flag 8FEBC8 indexed
+function boss()
+	for i = 0,3 do
+		m = memory.read_u16_le(0x8FEBC0+i*2)
+		f = memory.read_u16_le(0x8FEBC8+i*2)
+		val=mainmemory.read_u16_le(m)
+		for j = 1,19 do
+			
+			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f and val&f~=0 then
+				draw({bossenum[j][1], bosspos[i][1], bosspos[i][2]})
+			end
 		end
-		i = i * 2
 	end
 end
 --map D908
-function map()
+function map(r)
+	
+	gui.drawString(256,r*h, "MAP:")
 	i=1
 	while i ~= 7 do
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
-			text(mapenum[i])
+			text({mapenum[i][1], mapenum[i][2], r, mapenum[i][3]})
 		end
 		i = i+1
 	end
 end
 
 itemenum = {}
-itemenum[1]={"varia.png",0,0}
-itemenum[0x20]={"gravity.png",1,0}
-itemenum[4]={"morph.png",2,0}
-itemenum[0x1000]={"bombs.png",3,0}
-itemenum[2]={"spring.png",4,0}
-itemenum[0x100]={"hijump.png",5,0}
-itemenum[0x2000]={"speed.png",6,0}
-itemenum[0x200]={"space.png",7,0}
-itemenum[8]={"screw.png",8,0}
+itemenum[1]={"varia.png",2,0}
+itemenum[0x20]={"gravity.png",3,0}
+itemenum[4]={"morph.png",4,0}
+itemenum[0x1000]={"bombs.png",5,0}
+itemenum[2]={"spring.png",6,0}
+itemenum[0x100]={"hijump.png",2,1}
+itemenum[0x2000]={"speed.png",3,1}
+itemenum[0x200]={"space.png",4,1}
+itemenum[8]={"screw.png",5,1}
+itemenum[0xF000]={"walljump.png",6,1}
 
 beamenum = {}
-beamenum[0x1000]={"charge.png",0,1}
-beamenum[4]={"spazer.png",1,1}
-beamenum[2]={"ice.png",2,1}
-beamenum[1]={"wave.png",3,1}
-beamenum[8]={"plasma.png",4,1}
+beamenum[0x1000]={"charge.png",0,2}
+beamenum[4]={"spazer.png",0,0}
+beamenum[2]={"ice.png",0,1}
+beamenum[1]={"wave.png",1,0}
+beamenum[8]={"plasma.png",1,1}
 
 
-bossenum = {}
-for i = 1, 4 do
-	bossenum[i] = {}
-end
-bossenum[1][256]={"kraid.png",5,1}
-bossenum[2][1]={"phantoon.png",6,1}
-bossenum[2][256]={"draygon.png",7,1}
-bossenum[3][1]={"ridley.png",8,1}
+bossenum = {
+	{"kraid.png",0xD829, 1},
+	{"ridley.png",0xD82A, 1},
+	{"phantoon.png",0xD82B, 1},
+	{"draygon.png",0xD82C, 1},
+	{"sporespawn.png",0xD829, 2},
+	{"crocomire.png",0xD82A, 2},
+	{"botwoon.png",0xD82C, 2},
+	{"goldentorizo.png",0xD82A, 4},
+	{"metroidroom.png",0xD822, 1},
+	{"metroidroom.png",0xD822, 2},
+	{"metroidroom.png",0xD822, 4},
+	{"metroidroom.png",0xD822, 8},
+	{"bombtorizo.png",0xD828, 4},
+	{"bowlingstatue.png",0xD823, 1},
+	{"acidchozostatue.png",0xD821, 0x10},
+	{"pitroom.png",0xD823, 2},
+	{"babykraidroom.png",0xD823, 4},
+	{"plasmaroom.png",0xD823, 8},
+	{"metalpiratesroom.png",0xD823, 0x10}
+}
+
+bosspos={}
+bosspos[0]={7,0}
+bosspos[1]={7,1}
+bosspos[2]={8,0}
+bosspos[3]={8,1}
 
 mapenum = {}
-mapenum[1]={"C",3,2,"white"}
-mapenum[2]={"B",4,2,"green"}
-mapenum[3]={"N",5,2,"red"}
-mapenum[4]={"W",6,2,"brown"}
-mapenum[5]={"M",7,2,"blue"}
-mapenum[6]={"T",8,2,"gray"}
-
-
-
+mapenum[1]={"C",3,"white"}
+mapenum[2]={"B",4,"green"}
+mapenum[3]={"N",5,"red"}
+mapenum[4]={"W",6,"brown"}
+mapenum[5]={"M",7,"blue"}
+mapenum[6]={"T",8,"gray"}
 while true do
-	items()
-	beams()
-	boss(1)
-	boss(2)
-	boss(3)
-	gui.drawString(256,2*h, "MAP:")
-	map()
-	mem(0xdffef0)
-	bigletter(0xceb240 + (224 - 128) * 0x40, 0, "DIF: ")
-	bigletter(0xceb240 + (226 - 128) * 0x40, 10, "PRO: ")
-	bigletter(0xceb240 + (228 - 128) * 0x40, 20, "QOL: ")
+	if emu.getsystemid() == "SNES" then
+		if first then
+			client.SetGameExtraPadding(0,0,142,0)
+			first = false
+		end
+		items()
+		beams()
+		boss()
+		map(3)
+		mem(0xdffef0,4)
+		bigletter(0xceb240 + (224 - 128) * 0x40, 5, "DIF: ")
+		bigletter(0xceb240 + (226 - 128) * 0x40, 6, "PRO: ")
+		bigletter(0xceb240 + (228 - 128) * 0x40, 7, "QOL: ")
+	end
 	emu.frameadvance()
+
 end
