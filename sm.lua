@@ -152,9 +152,8 @@ function flags()
 	for i = 1,3 do
 		val=mainmemory.read_u16_le(flagenum[i][2])
 		f=flagenum[i][3]
-		draw(flagpos[i][1], flagpos[i][2],flagenum[i][1])
-		if val&f==0 then
-			drawequip(flagpos[i][1], flagpos[i][2])
+		if val&f~=0 then
+			draw(flagpos[i][1], flagpos[i][2],flagenum[i][1])
 		end
 	end
 end
