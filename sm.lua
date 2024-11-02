@@ -102,81 +102,94 @@ function map(r)
 	for i = 1,6 do
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
-			text({mapenum[i][1], mapenum[i][2], r, mapenum[i][3]})
+			text({mapenum[i][1], i+2, r, mapenum[i][2]})
 		else
-			text({mapenum[i][1], mapenum[i][2], r, "gray"})
+			text({mapenum[i][1], i+2, r, "gray"})
 		end
 	end
-	loc = mainmemory.readbyte(0x1F5B)
+	
+	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
 	if gs==0xF then
 		if pauseloc == -1 then
 			pauseloc = loc
 		end
-		loc = mainmemory.readbyte(0x1F5B)
-		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"white")
-		gui.drawRectangle(254+mapenum[pauseloc+1][2]*w+2, r*h+2, w-2, h-2,0,"orange")
+		gui.drawRectangle(254+pauseloc*w, r*h+2, w-2, h-2,0,"orange")
 	else
 		pauseloc =-1
-		gui.drawRectangle(254+mapenum[loc+1][2]*w+2, r*h+2, w-2, h-2,0,"white")
 	end
+	gui.drawRectangle(254+loc*w, r*h+2, w-2, h-2,0,"white")
 end
 
+beamenum = {}
+--c 1 r1,3
+beamenum[4]={"spazer.png",0,0}
+beamenum[2]={"ice.png",0,1}
+beamenum[0x1000]={"charge.png",0,2}
+--c 2 r1,2
+beamenum[1]={"wave.png",1,0}
+beamenum[8]={"plasma.png",1,1}
+
+
 itemenum = {}
+--c 3,7, r1
 itemenum[1]={"varia.png",2,0}
 itemenum[0x20]={"gravity.png",3,0}
 itemenum[4]={"morph.png",4,0}
 itemenum[0x1000]={"bombs.png",5,0}
 itemenum[2]={"spring.png",6,0}
+--c 3,7, r2
 itemenum[0x100]={"hijump.png",2,1}
 itemenum[0x2000]={"speed.png",3,1}
 itemenum[0x200]={"space.png",4,1}
 itemenum[8]={"screw.png",5,1}
 itemenum[0xF000]={"walljump.png",6,1}
 
-beamenum = {}
-beamenum[0x1000]={"charge.png",0,2}
-beamenum[4]={"spazer.png",0,0}
-beamenum[2]={"ice.png",0,1}
-beamenum[1]={"wave.png",1,0}
-beamenum[8]={"plasma.png",1,1}
+bosspos={}
+--c 8,9, r1
+bosspos[0]={7,0}
+bosspos[1]={8,0}
+--c 8,9, r2
+bosspos[2]={7,1}
+bosspos[3]={8,1}
+
+maprow=3
+seedrow=4
+diffrow=5
+progrow=6
+qolrow=7
 
 
 bossenum = {
-	{"kraid.png",0xD829, 1},
-	{"ridley.png",0xD82A, 1},
-	{"phantoon.png",0xD82B, 1},
-	{"draygon.png",0xD82C, 1},
+	{"pitroom.png",0xD823, 2},
+	{"bombtorizo.png",0xD828, 4},
 	{"sporespawn.png",0xD829, 2},
+	{"babykraidroom.png",0xD823, 4},
+	{"kraid.png",0xD829, 1},
 	{"crocomire.png",0xD82A, 2},
+	{"phantoon.png",0xD82B, 1},
+	{"bowlingstatue.png",0xD823, 1},
 	{"botwoon.png",0xD82C, 2},
+	{"draygon.png",0xD82C, 1},
+	{"plasmaroom.png",0xD823, 8},
 	{"goldentorizo.png",0xD82A, 4},
+	{"metalpiratesroom.png",0xD823, 0x10},
+	{"acidchozostatue.png",0xD821, 0x10},
+	{"ridley.png",0xD82A, 1},
 	{"metroidroom.png",0xD822, 1},
 	{"metroidroom.png",0xD822, 2},
 	{"metroidroom.png",0xD822, 4},
-	{"metroidroom.png",0xD822, 8},
-	{"bombtorizo.png",0xD828, 4},
-	{"bowlingstatue.png",0xD823, 1},
-	{"acidchozostatue.png",0xD821, 0x10},
-	{"pitroom.png",0xD823, 2},
-	{"babykraidroom.png",0xD823, 4},
-	{"plasmaroom.png",0xD823, 8},
-	{"metalpiratesroom.png",0xD823, 0x10}
+	{"metroidroom.png",0xD822, 8}
 }
 
-bosspos={}
-bosspos[0]={7,0}
-bosspos[1]={7,1}
-bosspos[2]={8,0}
-bosspos[3]={8,1}
-
-mapenum = {}
-mapenum[1]={"C",3,"purple"}
-mapenum[2]={"B",4,"green"}
-mapenum[3]={"N",5,"red"}
-mapenum[4]={"W",6,"brown"}
-mapenum[5]={"M",7,"blue"}
-mapenum[6]={"T",8,"pink"}
+mapenum = {
+	{"C","purple"},
+	{"B","green"},
+	{"N","red"},
+	{"W","brown"},
+	{"M","blue"},
+	{"T","pink"}
+}
 while true do
 	if emu.getsystemid() == "SNES" then
 		if first then
@@ -187,11 +200,11 @@ while true do
 		items()
 		beams()
 		boss()
-		map(3)
-		mem(0xdffef0,4)
-		bigletter(0xceb240 + (224 - 128) * 0x40, 5, "DIF: ")
-		bigletter(0xceb240 + (226 - 128) * 0x40, 6, "PRO: ")
-		bigletter(0xceb240 + (228 - 128) * 0x40, 7, "QOL: ")
+		map(maprow)
+		mem(0xdffef0,seedrow)
+		bigletter(0xceb240 + (224 - 128) * 0x40, diffrow, "DIF: ")
+		bigletter(0xceb240 + (226 - 128) * 0x40, progrow, "PRO: ")
+		bigletter(0xceb240 + (228 - 128) * 0x40, qolrow, "QOL: ")
 	end
 	emu.frameadvance()
 
