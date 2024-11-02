@@ -33,46 +33,60 @@ function bigletter(addr, r, s)
 	end
 	gui.drawString(254,r*h, s .. str)
 end
-function draw(i)
-	x=i[2]
-	y=i[3]
-	gui.drawImage(i[1],254+x*w,y*h,w,h)
+function draw(x,y,img)
+	gui.drawImage(img,254+x*w,y*h,w,h)
 end
-function drawequip(i)
-	x=i[2]
-	y=i[3]
+function drawequip(x,y)
 	gui.drawRectangle(254+x*w-1,y*h-1,w+2,h+2,0,0x01888888)
 end
-function text(i)
-	x=i[2]
-	y=i[3]
-	gui.drawString(254+x*w,y*h,i[1],i[4],nil,h)
+function text(x,y,str,clr)
+	gui.drawString(254+x*w,y*h,str,clr,nil,h)
 end
 --items, 09A4
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	i=1
-	while i <= 0xF000 do
+	
+	while i <= 0x2000 do
 		if (val&i)~=0 and itemenum[i] then
-			draw(itemenum[i])
+			draw(itemenum[i][2], itemenum[i][3], itemenum[i][1])
 			eq=mainmemory.read_u16_le(0x09A2)
 			if (eq&i)==0 then
-				drawequip(itemenum[i])
+				drawequip(itemenum[i][2], itemenum[i][3])
 			end
 		end
 		i = i * 2
 	end
+	wj=memory.readbyte(0xdfff05)
+	if wj==1 then
+		i=0x400
+		if (val&i)~=0 then
+			draw(walljump[2], walljump[3], walljump[1])
+
+		else
+			draw(walljump[2], walljump[3], walljump[1])
+			drawequip(walljump[2], walljump[3])
+		end
+		
+	end
 end
 --beams, 09A8
 function beams()
+	f = false
+	val=mainmemory.read_u16_le(0x0A76)
+	if val==0x8000 then
+		draw(hyper[2],hyper[3],hyper[1])
+		eq=mainmemory.read_u16_le(0x09A6)
+		f = true
+	end
 	val=mainmemory.read_u16_le(0x09A8)
 	i=1
 	while i <= 0x2000 do
 		if (val&i)~=0 and beamenum[i] then
-			draw(beamenum[i])
+			draw(beamenum[i][2],beamenum[i][3],beamenum[i][1])
 			eq=mainmemory.read_u16_le(0x09A6)
-			if (eq&i)==0 then
-				drawequip(beamenum[i])
+			if (eq&i)==0 or f then
+				drawequip(beamenum[i][2],beamenum[i][3])
 			end
 		end
 		i = i * 2
@@ -87,10 +101,24 @@ function boss()
 		for j = 1,19 do
 			
 			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
-				draw({bossenum[j][1], bosspos[i][1], bosspos[i][2]})
+				draw(bosspos[i][1], bosspos[i][2],bossenum[j][1])
 				if val&f==0 then
-					drawequip({bossenum[j][1], bosspos[i][1], bosspos[i][2]})
+					drawequip(bosspos[i][1], bosspos[i][2])
 				end
+			end
+		end
+	end
+	val=mainmemory.read_u16_le(mb[2])
+	draw(mbpos[1],mbpos[2],mb[1])
+	if val&mb[3]==0 then
+		drawequip(mbpos[1],mbpos[2])
+	else
+		val=memory.read_u16_le(0xA1F000)
+		if val== 0xFFFF then
+			val=mainmemory.readbyte(animals[2])
+			draw(animalpos[1],animalpos[2],animals[1])
+			if val&animals[3]==0 then
+				drawequip(animalpos[1],animalpos[2])
 			end
 		end
 	end
@@ -102,9 +130,9 @@ function map(r)
 	for i = 1,6 do
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
-			text({mapenum[i][1], i+2, r, mapenum[i][2]})
+			text(i+2, r,mapenum[i][1], mapenum[i][2])
 		else
-			text({mapenum[i][1], i+2, r, "gray"})
+			text(i+2, r,mapenum[i][1], "gray")
 		end
 	end
 	
@@ -120,7 +148,16 @@ function map(r)
 	end
 	gui.drawRectangle(254+loc*w, r*h+2, w-2, h-2,0,"white")
 end
-
+function flags()
+	for i = 1,3 do
+		val=mainmemory.read_u16_le(flagenum[i][2])
+		f=flagenum[i][3]
+		draw(flagpos[i][1], flagpos[i][2],flagenum[i][1])
+		if val&f==0 then
+			drawequip(flagpos[i][1], flagpos[i][2])
+		end
+	end
+end
 beamenum = {}
 --c 1 r1,3
 beamenum[4]={"spazer.png",0,0}
@@ -129,6 +166,7 @@ beamenum[0x1000]={"charge.png",0,2}
 --c 2 r1,2
 beamenum[1]={"wave.png",1,0}
 beamenum[8]={"plasma.png",1,1}
+hyper={"hyper.png",1,2}
 
 
 itemenum = {}
@@ -143,7 +181,7 @@ itemenum[0x100]={"hijump.png",2,1}
 itemenum[0x2000]={"speed.png",3,1}
 itemenum[0x200]={"space.png",4,1}
 itemenum[8]={"screw.png",5,1}
-itemenum[0xF000]={"walljump.png",6,1}
+walljump={"walljump.png",6,1}
 
 bosspos={}
 --c 8,9, r1
@@ -152,14 +190,28 @@ bosspos[1]={8,0}
 --c 8,9, r2
 bosspos[2]={7,1}
 bosspos[3]={8,1}
+-- c5,6,7, r3
+flagpos = {
+	{4,2},
+	{5,2},
+	{6,2}
+}
+--c 8,9, r3
+animalpos={7,2}
+mbpos={8,2}
 
+--r4,8
 maprow=3
 seedrow=4
 diffrow=5
 progrow=6
 qolrow=7
 
-
+flagenum = {
+	{"zebes.png", 0xD820, 1},
+	{"shak.png", 0xd821, 0x20},
+	{"tube.png", 0xd821, 8}
+}
 bossenum = {
 	{"pitroom.png",0xD823, 2},
 	{"bombtorizo.png",0xD828, 4},
@@ -181,6 +233,8 @@ bossenum = {
 	{"metroidroom.png",0xD822, 4},
 	{"metroidroom.png",0xD822, 8}
 }
+mb={"motherbrain.png",0xD82A, 2}
+animals={"animals.png",0xD821, 0x80}
 
 mapenum = {
 	{"C","purple"},
@@ -200,6 +254,7 @@ while true do
 		items()
 		beams()
 		boss()
+		flags()
 		map(maprow)
 		mem(0xdffef0,seedrow)
 		bigletter(0xceb240 + (224 - 128) * 0x40, diffrow, "DIF: ")
