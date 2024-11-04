@@ -37,7 +37,7 @@ function draw(x,y,img)
 	gui.drawImage(img,254+x*w,y*h,w,h)
 end
 function drawequip(x,y)
-	gui.drawRectangle(254+x*w-1,y*h-1,w+2,h+2,0,0x01888888)
+	gui.drawImage("equip.png",254+x*w,y*h,w,h)
 end
 function text(x,y,str,clr)
 	gui.drawString(254+x*w,y*h,str,clr,nil,h)
@@ -71,7 +71,7 @@ function items()
 	end
 end
 --beams, 09A8
-function beams()
+function beam()
 	f = false
 	val=mainmemory.read_u16_le(0x0A76)
 	if val==0x8000 then
@@ -92,22 +92,43 @@ function beams()
 		i = i * 2
 	end
 end
---boss, flag loc 8FEBC0, flag 8FEBC8 indexed
+--boss, flag loc 8FEBC0, flag 8FEBC8 index
 function boss()
-	for i = 0,3 do
-		m = memory.read_u16_le(0x8FEBC0+i*2)
-		f = memory.read_u16_le(0x8FEBC8+i*2)
-		val=mainmemory.read_u16_le(m)
-		for j = 1,19 do
-			
-			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
-				draw(bosspos[i][1], bosspos[i][2],bossenum[j][1])
-				if val&f==0 then
-					drawequip(bosspos[i][1], bosspos[i][2])
+	-- no objectives
+	val=memory.read_u16_le(0x83AAD2)
+	if val==0 then 
+		for i = 0,3 do
+			m = memory.read_u16_le(0x8FEBC0+i*2)
+			f = memory.read_u16_le(0x8FEBC8+i*2)
+			val=mainmemory.read_u16_le(m)
+			for j = 1,19 do
+				
+				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
+					draw(bosspos[i][1], bosspos[i][2],bossenum[j][1])
+					if val&f==0 then
+						drawequip(bosspos[i][1], bosspos[i][2])
+					end
 				end
 			end
 		end
-	end
+	else
+		val=mainmemory.readbyte(0xD820)
+		for i=0,3 do
+			draw(bosspos[i][1],bosspos[i][2], zebetite)
+		end
+		if val&8==0 then
+			drawequip(bosspos[0][1], bosspos[0][2])
+		end
+		if val&0x10==0 then
+			drawequip(bosspos[1][1], bosspos[1][2])
+			if val&8==0 then
+				drawequip(bosspos[2][1], bosspos[2][2])
+			end
+		end
+		if val&0x20==0 then
+			drawequip(bosspos[3][1], bosspos[3][2])
+		end
+	end 
 	val=mainmemory.read_u16_le(mb[2])
 	draw(mbpos[1],mbpos[2],mb[1])
 	if val&mb[3]==0 then
@@ -234,6 +255,7 @@ bossenum = {
 }
 mb={"motherbrain.png",0xD82A, 2}
 animals={"animals.png",0xD821, 0x80}
+zebetite = "zebetite.png"
 
 mapenum = {
 	{"C","purple"},
@@ -249,9 +271,8 @@ while true do
 			client.SetGameExtraPadding(0,0,142,0)
 			first = false
 		end
-		gui.clearGraphics()
 		items()
-		beams()
+		beam()
 		boss()
 		flags()
 		map(maprow)
