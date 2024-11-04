@@ -1,11 +1,13 @@
-
+-- first run through
 first=true
+-- width and height of icons
 w=16
 h=16
 function mem(addr, r)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 1
+	-- 0 terminated strings
 	while c ~= 0 do
 		str = str .. string.char(c)
 		c = memory.readbyte(addr+i)
@@ -17,12 +19,14 @@ function bigletter(addr, r, s)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 2
-	b = 0;
+	b = 0
+	-- length of all big letter strings
 	while i < 0x40 do
 		if c < 0x0040 then
 			c = c -0x0020
 			str = str .. string.char(c+97)
 		elseif c == 127 then
+			-- we only care about the last part of the string
 			str = ""
 		else
 			c = c -0x0030
@@ -42,11 +46,10 @@ end
 function text(x,y,str,clr)
 	gui.drawString(254+x*w,y*h,str,clr,nil,h)
 end
---items, 09A4
+--items 09A4, walljump enabled dfff05
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	i=1
-	
 	while i <= 0x2000 do
 		if (val&i)~=0 and itemenum[i] then
 			draw(itemenum[i][2], itemenum[i][3], itemenum[i][1])
@@ -62,26 +65,23 @@ function items()
 		i=0x400
 		if (val&i)~=0 then
 			draw(walljump[2], walljump[3], walljump[1])
-
 		else
 			draw(walljump[2], walljump[3], walljump[1])
 			drawequip(walljump[2], walljump[3])
 		end
-		
 	end
 end
---beams, 09A8
+--beams 09A8, hyperbeam 0A76
 function beam()
 	f = false
 	val=mainmemory.read_u16_le(0x0A76)
 	if val==0x8000 then
 		draw(hyper[2],hyper[3],hyper[1])
-		eq=mainmemory.read_u16_le(0x09A6)
 		f = true
 	end
 	val=mainmemory.read_u16_le(0x09A8)
 	i=1
-	while i <= 0x2000 do
+	while i ~= 0x2000 do
 		if (val&i)~=0 and beamenum[i] then
 			draw(beamenum[i][2],beamenum[i][3],beamenum[i][1])
 			eq=mainmemory.read_u16_le(0x09A6)
@@ -92,11 +92,11 @@ function beam()
 		i = i * 2
 	end
 end
---boss, flag loc 8FEBC0, flag 8FEBC8 index
+-- flag loc 8FEBC0, flag 8FEBC8 indexed
 function boss()
-	-- no objectives
 	val=memory.read_u16_le(0x83AAD2)
 	if val==0 then 
+		-- objectives
 		for i = 0,3 do
 			m = memory.read_u16_le(0x8FEBC0+i*2)
 			f = memory.read_u16_le(0x8FEBC8+i*2)
@@ -112,6 +112,7 @@ function boss()
 			end
 		end
 	else
+		-- no objectives
 		val=mainmemory.readbyte(0xD820)
 		for i=0,3 do
 			draw(bosspos[i][1],bosspos[i][2], zebetite)
@@ -128,14 +129,16 @@ function boss()
 		if val&0x20~=0 then
 			drawequip(bosspos[3][1], bosspos[3][2])
 		end
-	end 
+	end
 	val=mainmemory.read_u16_le(mb[2])
 	draw(mbpos[1],mbpos[2],mb[1])
+	-- mother brain
 	if val&mb[3]~=0 then
 		drawequip(mbpos[1],mbpos[2])
 	else
 		val=memory.read_u16_le(0xA1F000)
 		if val== 0xFFFF then
+			-- animals need to be saved
 			val=mainmemory.readbyte(animals[2])
 			draw(animalpos[1],animalpos[2],animals[1])
 			if val&animals[3]~=0 then
@@ -144,7 +147,7 @@ function boss()
 		end
 	end
 end
---map D908
+--map D908, loc 1F5B
 pauseloc=-1
 function map(r)
 	gui.drawString(254,r*h+2, "MAPS:", "yellow")
@@ -156,9 +159,9 @@ function map(r)
 			text(i+2, r,mapenum[i][1], "gray")
 		end
 	end
-	
 	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
+	-- pausing: track current position move map icon.
 	if gs==0xF then
 		if pauseloc == -1 then
 			pauseloc = loc
@@ -169,6 +172,7 @@ function map(r)
 	end
 	gui.drawRectangle(254+loc*w, r*h+2, w-2, h-2,0,"white")
 end
+--general gameplay flags
 function flags()
 	for i = 1,3 do
 		val=mainmemory.read_u16_le(flagenum[i][2])
@@ -178,16 +182,16 @@ function flags()
 		end
 	end
 end
+
 beamenum = {}
 --c 1 r1,3
 beamenum[4]={"spazer.png",0,0}
 beamenum[2]={"ice.png",0,1}
 beamenum[0x1000]={"charge.png",0,2}
---c 2 r1,2
+--c 2 r1,3
 beamenum[1]={"wave.png",1,0}
 beamenum[8]={"plasma.png",1,1}
 hyper={"hyper.png",1,2}
-
 
 itemenum = {}
 --c 3,7, r1
@@ -210,6 +214,7 @@ bosspos[1]={8,0}
 --c 8,9, r2
 bosspos[2]={7,1}
 bosspos[3]={8,1}
+
 -- c5,6,7, r3
 flagpos = {
 	{4,2},
@@ -227,6 +232,7 @@ diffrow=5
 progrow=6
 qolrow=7
 
+-- icon, mem loc for flag, flag
 flagenum = {
 	{"zebes.png", 0xD820, 1},
 	{"shak.png", 0xd821, 0x20},
@@ -256,7 +262,7 @@ bossenum = {
 mb={"motherbrain.png",0xD82A, 2}
 animals={"animals.png",0xD821, 0x80}
 zebetite = "zebetite.png"
-
+-- maps & color
 mapenum = {
 	{"C","purple"},
 	{"B","green"},
@@ -282,5 +288,4 @@ while true do
 		bigletter(0xceb240 + (228 - 128) * 0x40, qolrow, "QOL: ")
 	end
 	emu.frameadvance()
-
 end
