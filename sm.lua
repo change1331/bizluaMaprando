@@ -105,7 +105,7 @@ function boss()
 				
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
 					draw(bosspos[i][1], bosspos[i][2],bossenum[j][1])
-					if val&f==0 then
+					if val&f~=0 then
 						drawequip(bosspos[i][1], bosspos[i][2])
 					end
 				end
@@ -116,29 +116,29 @@ function boss()
 		for i=0,3 do
 			draw(bosspos[i][1],bosspos[i][2], zebetite)
 		end
-		if val&8==0 then
+		if val&8~=0 then
 			drawequip(bosspos[0][1], bosspos[0][2])
 		end
-		if val&0x10==0 then
+		if val&0x10~=0 then
 			drawequip(bosspos[1][1], bosspos[1][2])
-			if val&8==0 then
+			if val&8~=0 then
 				drawequip(bosspos[2][1], bosspos[2][2])
 			end
 		end
-		if val&0x20==0 then
+		if val&0x20~=0 then
 			drawequip(bosspos[3][1], bosspos[3][2])
 		end
 	end 
 	val=mainmemory.read_u16_le(mb[2])
 	draw(mbpos[1],mbpos[2],mb[1])
-	if val&mb[3]==0 then
+	if val&mb[3]~=0 then
 		drawequip(mbpos[1],mbpos[2])
 	else
 		val=memory.read_u16_le(0xA1F000)
 		if val== 0xFFFF then
 			val=mainmemory.readbyte(animals[2])
 			draw(animalpos[1],animalpos[2],animals[1])
-			if val&animals[3]==0 then
+			if val&animals[3]~=0 then
 				drawequip(animalpos[1],animalpos[2])
 			end
 		end
