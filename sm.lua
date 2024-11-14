@@ -3,7 +3,7 @@ first=true
 -- width and height of icons
 w=16
 h=16
-function mem(addr, r)
+function mem(addr)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 1
@@ -13,9 +13,9 @@ function mem(addr, r)
 		c = memory.readbyte(addr+i)
 		i = i + 1
 	end
-	gui.drawString(254,r*h,str)
+	return str
 end
-function bigletter(addr, r, s)
+function bigletter(addr)
 	str = ""
 	c = memory.readbyte(addr)
 	i = 2
@@ -35,13 +35,25 @@ function bigletter(addr, r, s)
 		c = memory.read_u16_le(addr+i)
 		i = i + 2
 	end
-	gui.drawString(254,r*h, s .. str)
+	return str
 end
 function draw(x,y,img)
 	gui.drawImage(img,254+x*w,y*h,w,h)
 end
 function drawequip(x,y)
 	gui.drawImage("equip.png",254+x*w,y*h,w,h)
+end
+function draw2(x,y,img)
+	gui.drawImage(img,254+x*w,y*h,w*4,h*4)
+end
+function drawequip2(x,y)
+	gui.drawImage("equip.png",254+x*w,y*h,w*4,h*4)
+end
+function draw4(x,y,img)
+	gui.drawImage(img,254+x*w,y*h,w*8,h*8)
+end
+function drawequip4(x,y)
+	gui.drawImage("equip.png",254+x*w,y*h,w*8,h*8)
 end
 function text(x,y,str,clr)
 	gui.drawString(254+x*w,y*h,str,clr,nil,h)
@@ -69,6 +81,9 @@ function items()
 			draw(walljump[2], walljump[3], walljump[1])
 			drawequip(walljump[2], walljump[3])
 		end
+	else
+		--wj icon?
+		--draw(walljump[2], walljump[3], walljump[1])
 	end
 end
 --beams 09A8, hyperbeam 0A76
@@ -97,61 +112,51 @@ function boss()
 	val=memory.read_u16_le(0x83AAD2)
 	if val==0 then 
 		-- objectives
-		for i = 0,3 do
+		bossesdead = 0
+		for i = 0, 3 do
 			m = memory.read_u16_le(0x8FEBC0+i*2)
 			f = memory.read_u16_le(0x8FEBC8+i*2)
 			val=mainmemory.read_u16_le(m)
-			for j = 1,19 do
-				
-				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
-					draw(bosspos[i][1], bosspos[i][2],bossenum[j][1])
-					if val&f~=0 then
-						drawequip(bosspos[i][1], bosspos[i][2])
-					end
+			if val&f~=0 then
+				bossesdead = bossesdead+1
+			end
+		end
+		if bossesdead == 4 then
+			motherbrain()
+		else
+			for i = 0, 3 do
+				m = memory.read_u16_le(0x8FEBC0+i*2)
+				f = memory.read_u16_le(0x8FEBC8+i*2)
+				val=mainmemory.read_u16_le(m)
+				draw2(bosspos[i][1],bosspos[i][2],objicons[i])
+				if val&f~=0 then
+					drawequip2(bosspos[i][1],bosspos[i][2])
 				end
 			end
 		end
 	else
-		-- no objectives
-		val=mainmemory.readbyte(0xD820)
-		for i=0,3 do
-			draw(bosspos[i][1],bosspos[i][2], zebetite)
-		end
-		if val&8~=0 then
-			drawequip(bosspos[0][1], bosspos[0][2])
-		end
-		if val&0x10~=0 then
-			drawequip(bosspos[1][1], bosspos[1][2])
-			if val&8~=0 then
-				drawequip(bosspos[2][1], bosspos[2][2])
-			end
-		end
-		if val&0x20~=0 then
-			drawequip(bosspos[3][1], bosspos[3][2])
-		end
+		motherbrain()
 	end
-	val=mainmemory.read_u16_le(mb[2])
-	draw(mbpos[1],mbpos[2],mb[1])
-	-- mother brain
-	if val&mb[3]~=0 then
-		drawequip(mbpos[1],mbpos[2])
-	else
-		val=memory.read_u16_le(0xA1F000)
-		if val== 0xFFFF then
-			-- animals need to be saved
-			val=mainmemory.readbyte(animals[2])
-			draw(animalpos[1],animalpos[2],animals[1])
-			if val&animals[3]~=0 then
-				drawequip(animalpos[1],animalpos[2])
-			end
+end
+function motherbrain()
+	x=bosspos[0][1]
+	y=bosspos[0][2]
+	mb2dead = mainmemory.readbyte(mb[2])&mb[3]~=0
+	if mb2dead then
+		draw4(x,y,animals[1], w2, h2)
+		val = mainmemory.readbyte(animals[2])
+		if val&animals[3]~=0 then
+			drawequip4(x,y)
 		end
+	else
+		draw4(x,y,mb[1])
 	end
 end
 --map D908, loc 1F5B
 pauseloc=-1
 function map(r)
 	gui.drawString(254,r*h+2, "MAPS:", "yellow")
-	for i = 1,6 do
+	for i = 1,#mapenum do
 		val=mainmemory.readbyte(0xD908+i-1)
 		if val == 0xFF and mapenum[i] then
 			text(i+2, r,mapenum[i][1], mapenum[i][2])
@@ -174,69 +179,62 @@ function map(r)
 end
 --general gameplay flags
 function flags()
-	for i = 1,3 do
+	for i = 1,#flagenum do
 		val=mainmemory.read_u16_le(flagenum[i][2])
 		f=flagenum[i][3]
 		if val&f~=0 then
-			draw(flagpos[i][1], flagpos[i][2],flagenum[i][1])
+			draw(flagcol,i-1,flagenum[i][1])
 		end
 	end
 end
 
 beamenum = {}
---c 1 r1,3
-beamenum[4]={"spazer.png",0,0}
+--c 1 r1,2
+beamenum[0x1000]={"charge.png",0,0}
 beamenum[2]={"ice.png",0,1}
-beamenum[0x1000]={"charge.png",0,2}
---c 2 r1,3
-beamenum[1]={"wave.png",1,0}
-beamenum[8]={"plasma.png",1,1}
-hyper={"hyper.png",1,2}
+--c 2 r1,2
+beamenum[4]={"spazer.png",1,0}
+beamenum[1]={"wave.png",1,1}
+--c 3 r1,2
+beamenum[8]={"plasma.png",2,0}
+hyper={"hyper.png",2,1}
 
 itemenum = {}
---c 3,7, r1
-itemenum[1]={"varia.png",2,0}
-itemenum[0x20]={"gravity.png",3,0}
-itemenum[4]={"morph.png",4,0}
-itemenum[0x1000]={"bombs.png",5,0}
-itemenum[2]={"spring.png",6,0}
---c 3,7, r2
-itemenum[0x100]={"hijump.png",2,1}
-itemenum[0x2000]={"speed.png",3,1}
-itemenum[0x200]={"space.png",4,1}
-itemenum[8]={"screw.png",5,1}
-walljump={"walljump.png",6,1}
+--c 4,8, r1
+itemenum[1]={"varia.png",3,0}
+itemenum[0x20]={"gravity.png",4,0}
+itemenum[4]={"morph.png",5,0}
+itemenum[0x1000]={"bombs.png",6,0}
+itemenum[2]={"spring.png",7,0}
+--c 4,8, r2
+itemenum[0x100]={"hijump.png",3,1}
+itemenum[0x2000]={"speed.png",4,1}
+itemenum[0x200]={"space.png",5,1}
+itemenum[8]={"screw.png",6,1}
+walljump={"walljump.png",7,1}
+
+-- c9, r1,2
+flagcol=8
 
 bosspos={}
---c 8,9, r1
-bosspos[0]={7,0}
-bosspos[1]={8,0}
---c 8,9, r2
-bosspos[2]={7,1}
-bosspos[3]={8,1}
-
--- c5,6,7, r3
-flagpos = {
-	{4,2},
-	{5,2},
-	{6,2}
-}
---c 8,9, r3
-animalpos={7,2}
-mbpos={8,2}
+--c 1-8, r3
+bosspos[0]={0.5,2}
+bosspos[1]={5,2}
+bosspos[2]={0.5,6}
+bosspos[3]={5,6}
 
 --r4,8
-maprow=3
-seedrow=4
-diffrow=5
-progrow=6
-qolrow=7
+maprow=10
+seedrow=12
+diffrow=13
 
 -- icon, mem loc for flag, flag
 flagenum = {
 	{"zebes.png", 0xD820, 1},
+	{"tube.png", 0xd821, 8},
 	{"shak.png", 0xd821, 0x20},
-	{"tube.png", 0xd821, 8}
+	--{"acid.png", 0xd821, 0x10},
+	--{"bowling.png", 0xD823, 1},
 }
 bossenum = {
 	{"pitroom.png",0xD823, 2},
@@ -257,11 +255,10 @@ bossenum = {
 	{"metroidroom.png",0xD822, 1},
 	{"metroidroom.png",0xD822, 2},
 	{"metroidroom.png",0xD822, 4},
-	{"metroidroom.png",0xD822, 8}
+	{"metroidroom.png",0xD822, 8},
 }
-mb={"motherbrain.png",0xD82A, 2}
+mb={"motherbrain2.png",0xD82A, 2}
 animals={"animals.png",0xD821, 0x80}
-zebetite = "zebetite.png"
 -- maps & color
 mapenum = {
 	{"C","purple"},
@@ -269,23 +266,60 @@ mapenum = {
 	{"N","red"},
 	{"W","brown"},
 	{"M","blue"},
-	{"T","pink"}
+	{"T","pink"},
 }
+frame = 0
+seed = ""
+diff = ""
+objicons = {}
+function setup()
+	seed = mem(0xdffef0)
+	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
+	diff = diff .. " " .. bigletter(0xceb240 + (226 - 128) * 0x40)
+	diff = diff .. " " .. bigletter(0xceb240 + (228 - 128) * 0x40)
+	for i = 0,3 do
+		m = memory.read_u16_le(0x8FEBC0+i*2)
+		f = memory.read_u16_le(0x8FEBC8+i*2)
+		val=mainmemory.read_u16_le(m)
+		for j = 1,#bossenum do
+			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
+				objicons[i] = bossenum[j][1]
+			end
+		end
+	end
+	items()
+	beam()
+	boss()
+	flags()
+	map(maprow)
+end
+goodcore = true;
 while true do
 	if emu.getsystemid() == "SNES" then
 		if first then
 			client.SetGameExtraPadding(0,0,142,0)
 			first = false
+			goodcore = memory.usememorydomain("System Bus")
+			if goodcore == false then
+				console.log("Current core unsupported.")
+			end
 		end
-		items()
-		beam()
-		boss()
-		flags()
-		map(maprow)
-		mem(0xdffef0,seedrow)
-		bigletter(0xceb240 + (224 - 128) * 0x40, diffrow, "DIF: ")
-		bigletter(0xceb240 + (226 - 128) * 0x40, progrow, "PRO: ")
-		bigletter(0xceb240 + (228 - 128) * 0x40, qolrow, "QOL: ")
+		
+		if frame == 30 and goodcore then
+			if seed ~= mem(0xdffef0) then
+				setup()
+			end
+			items()
+			beam()
+			boss()
+			flags()
+			map(maprow)
+			
+			gui.drawString(330,seedrow*h,seed,"white",nil,12, nil, nil, "center")
+			gui.drawString(330,diffrow*h,diff,"white",nil,12, nil, nil, "center")
+			frame = 0
+		end
 	end
+	frame = frame+1
 	emu.frameadvance()
 end
