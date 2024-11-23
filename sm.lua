@@ -110,7 +110,7 @@ end
 -- flag loc 8FEBC0, flag 8FEBC8 indexed
 function boss()
 	val=memory.read_u16_le(0x83AAD2)
-	if val==0 then 
+	if val~=0xECA0 then 
 		-- objectives
 		bossesdead = 0
 		for i = 0, 3 do
@@ -323,7 +323,7 @@ while true do
 			map(maprow)
 			
 			gui.drawString(330,seedrow*h,seed,"white",nil,12, nil, nil, "center")
-			gui.drawString(330,diffrow*h,diff,"white",nil,12, nil, nil, "center")
+			gui.drawString(400,diffrow*h,diff,"white",nil,12, nil, nil, "right")
 			frame = 0
 		end
 	end
