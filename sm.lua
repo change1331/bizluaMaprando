@@ -182,48 +182,48 @@ function flags()
 	for i = 1,#flagenum do
 		val=mainmemory.read_u16_le(flagenum[i][2])
 		f=flagenum[i][3]
-		if val&f~=0 then
-			draw(flagcol,i-1,flagenum[i][1])
+		draw(flagcol,i-1,flagenum[i][1])
+		if val&f==0 then
+			drawequip(flagcol, i-1, flagenum[i][1])
 		end
 	end
 end
 
 beamenum = {}
---c 1 r1,2
+--c 1-3 r1-2
 beamenum[0x1000]={"charge.png",0,0}
-beamenum[2]={"ice.png",0,1}
---c 2 r1,2
 beamenum[4]={"spazer.png",1,0}
-beamenum[1]={"wave.png",1,1}
---c 3 r1,2
 beamenum[8]={"plasma.png",2,0}
+
+beamenum[2]={"ice.png",0,1}
+beamenum[1]={"wave.png",1,1}
 hyper={"hyper.png",2,1}
 
 itemenum = {}
---c 4,8, r1
+--c 4-8, r1-2
 itemenum[1]={"varia.png",3,0}
 itemenum[0x20]={"gravity.png",4,0}
 itemenum[4]={"morph.png",5,0}
 itemenum[0x1000]={"bombs.png",6,0}
 itemenum[2]={"spring.png",7,0}
---c 4,8, r2
+
 itemenum[0x100]={"hijump.png",3,1}
 itemenum[0x2000]={"speed.png",4,1}
 itemenum[0x200]={"space.png",5,1}
 itemenum[8]={"screw.png",6,1}
 walljump={"walljump.png",7,1}
 
--- c9, r1,2
+-- c9, r1-
 flagcol=8
 
 bosspos={}
 --c 1-8, r3
-bosspos[0]={0.5,2}
-bosspos[1]={5,2}
-bosspos[2]={0.5,6}
-bosspos[3]={5,6}
+bosspos[0]={0,2}
+bosspos[1]={4,2}
+bosspos[2]={0,6}
+bosspos[3]={4,6}
 
---r4,8
+--r
 maprow=10
 seedrow=12
 diffrow=13
@@ -277,6 +277,7 @@ function setup()
 	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
 	diff = diff .. " " .. bigletter(0xceb240 + (226 - 128) * 0x40)
 	diff = diff .. " " .. bigletter(0xceb240 + (228 - 128) * 0x40)
+	nophantoon = true;
 	for i = 0,3 do
 		m = memory.read_u16_le(0x8FEBC0+i*2)
 		f = memory.read_u16_le(0x8FEBC8+i*2)
@@ -285,7 +286,13 @@ function setup()
 			if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
 				objicons[i] = bossenum[j][1]
 			end
+			if m == 0xD82B and f == 1 then 
+				nophantoon = false;
+			end
 		end
+	end
+	if nophantoon then
+		flagenum[#flagenum] = {"phantoon.png", 0xD82B, 1}
 	end
 	items()
 	beam()
