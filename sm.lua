@@ -166,7 +166,7 @@ function map(r)
 	end
 	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
-	-- pausing: track current position move map icon.
+	-- pausing: track current position move map icon.  could read 0x1F62 instead of storing pause loc
 	if gs==0xF then
 		if pauseloc == -1 then
 			pauseloc = loc
@@ -292,7 +292,7 @@ function setup()
 		end
 	end
 	if nophantoon then
-		flagenum[#flagenum] = {"phantoon.png", 0xD82B, 1}
+		flagenum[#flagenum] = {"atomic.png", 0xD82B, 1}
 	end
 	items()
 	beam()
