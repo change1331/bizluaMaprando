@@ -153,16 +153,24 @@ function motherbrain()
 	end
 end
 --map D908, loc 1F5B
+
 pauseloc=-1
 function map(r)
 	gui.drawString(254,r*h+2, "MAPS:", "yellow")
+	memory.usememorydomain("CARTRAM")
+	mapflags=memory.readbyte(0x2600)
+	memory.usememorydomain("System Bus")
+	flag = 1
 	for i = 1,#mapenum do
-		val=mainmemory.readbyte(0xD908+i-1)
-		if val == 0xFF and mapenum[i] then
-			text(i+2, r,mapenum[i][1], mapenum[i][2])
-		else
-			text(i+2, r,mapenum[i][1], "gray")
+		if mapflags&flag ~= 0 then
+			val=mainmemory.readbyte(0xD908+i-1)
+			if val == 0xFF and mapenum[i] then
+				text(i+2, r,mapenum[i][1], mapenum[i][2])
+			else
+				text(i+2, r,mapenum[i][1], "gray")
+			end
 		end
+		flag = flag * 2
 	end
 	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
