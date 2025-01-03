@@ -67,32 +67,38 @@ end
 --items 09A4, walljump enabled dfff05
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
+	eq=mainmemory.read_u16_le(0x09A2)
 	i=1
 	while i <= 0x2000 do
 		item = itemenum[i]
-		if (val&i)~=0 and item then
+		if item then
 			x = cfg[item][1]
 			y = cfg[item][2]
 			sc = cfg[item][3]
-			draw(x, y, item, sc)
-			eq=mainmemory.read_u16_le(0x09A2)
-			if (eq&i)==0 then
-				drawequip(x, y, sc)
+			if (val&i)~=0 then
+				draw(x, y, item, sc)
+				if (eq&i)==0 then
+					drawequip(x, y, sc)
+				end
+			else
+				draw(x,y,"b"..item, sc)
 			end
 		end
 		i = i * 2
 	end
 	wj=memory.readbyte(0xdfff05)
-	if wj==1 then
+	if wj&1==1 then
 		i=0x400
 		x = cfg[walljump][1]
 		y = cfg[walljump][2]
 		sc = cfg[walljump][3]
 		if (val&i)~=0 then
 			draw(x, y, walljump, sc)
+			if (eq&i) == 0 then
+				drawequip(x, y, sc)
+			end
 		else
-			draw(x, y, walljump, sc)
-			drawequip(x, y, sc)
+			draw(x, y, "b"..walljump, sc)
 		end
 	else
 		--wj icon?
@@ -108,17 +114,22 @@ function beams()
 		f = true
 	end
 	val=mainmemory.read_u16_le(0x09A8)
+	eq=mainmemory.read_u16_le(0x09A6)
 	i=1
 	while i ~= 0x2000 do
 		beam = beamenum[i]
-		if (val&i)~=0 and beam then
-			x = cfg[beam][1]
-			y = cfg[beam][2]
-			sc = cfg[beam][3]
-			draw(x, y, beam, sc)
-			eq=mainmemory.read_u16_le(0x09A6)
-			if (eq&i)==0 or f then
-				drawequip(x, y, sc)
+		if beam then
+			if (val&i)~=0 then
+				x = cfg[beam][1]
+				y = cfg[beam][2]
+				sc = cfg[beam][3]
+				draw(x, y, beam, sc)
+				
+				if (eq&i)==0 or f then
+					drawequip(x, y, sc)
+				end
+			else
+				draw(x, y, "b" .. beam, sc)
 			end
 		end
 		i = i * 2
@@ -288,7 +299,7 @@ mapenum = {
 	{"C","purple"},
 	{"B","green"},
 	{"N","red"},
-	{"W","pink"},
+	{"W","orange"},
 	{"M","blue"},
 	{"T","brown"},
 }
