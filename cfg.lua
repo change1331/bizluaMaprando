@@ -23,6 +23,7 @@ cfg["walljump"] = {7,1,1}
 cfg["tube"] = {8,1,1}
 
 cfg["motherbrain2"] = {0,2,8}
+cfg["ship"] = {0,2,8}
 cfg["animals"] = {0,2,8}
 cfg["boss0"] = {0,2,4}
 cfg["boss1"] = {4,2,4}
@@ -37,7 +38,7 @@ cfg["maprow"]= 10
 cfg["seedrow"] = 11
 cfg["diffrow"] = 12
 
-cfg["window"] = true
+cfg["window"] = false
 
 
 function getconfig() 

@@ -119,10 +119,11 @@ function beams()
 	while i ~= 0x2000 do
 		beam = beamenum[i]
 		if beam then
+			x = cfg[beam][1]
+			y = cfg[beam][2]
+			sc = cfg[beam][3]
 			if (val&i)~=0 then
-				x = cfg[beam][1]
-				y = cfg[beam][2]
-				sc = cfg[beam][3]
+				
 				draw(x, y, beam, sc)
 				
 				if (eq&i)==0 or f then
@@ -175,14 +176,18 @@ end
 function motherbrain()
 	mb2 = mainmemory.readbyte(mb[2])
 	if mb2&mb[3] ~= 0 then
-		anim = animals[1]
-		x = cfg[anim][1]
-		y = cfg[anim][2]
-		sc = cfg[anim][3]
-		draw(x,y,animals[1], sc)
 		val = mainmemory.readbyte(animals[2])
-		if val&animals[3]~=0 then
-			drawequip(x,y, sc)
+		if reqanimals and val&animals[3]==0 then
+			anim = animals[1]
+			x = cfg[anim][1]
+			y = cfg[anim][2]
+			sc = cfg[anim][3]
+			draw(x,y,anim, sc)
+		else
+			x = cfg["ship"][1]
+			y = cfg["ship"][2]
+			sc = cfg["ship"][3]
+			draw(x,y,"ship", sc)
 		end
 	else
 		m = mb[1]
@@ -217,7 +222,7 @@ function map(r)
 	for i = 1,#mapenum do
 		if mapflags&flag ~= 0 then
 			val=mainmemory.readbyte(0xD908+i-1)
-			if val == 0xFF and mapenum[i] then
+			if val ~= 0 and mapenum[i] then
 				text(i+2, r,mapenum[i][1], mapenum[i][2])
 			else
 				text(i+2, r,mapenum[i][1], "white")
@@ -308,12 +313,14 @@ seed = ""
 diff = ""
 objflags = {}
 noobj = false;
+reqanimals = false
 function setup()
 	seed = bigletter(0xceb240 + (224 - 128) * 0x40)
 	seed = seed .. " " .. mem(0xdffef0)
 	diff = bigletter(0xceb240 + (226 - 128) * 0x40)
 	diff = diff .. " " .. bigletter(0xceb240 + (228 - 128) * 0x40)
-	nophantoon = true;
+	nophantoon = true
+	reqanimals=memory.read_u32_le(0xa1f000)==0xffff
 	val=memory.read_u16_le(0x83AAD2)
 	if val==0xECA0 then 
 		noobj = true
