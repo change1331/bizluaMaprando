@@ -37,6 +37,7 @@ cfg["boss3"] = {4,6,4}
 cfg["maprow"]= 10
 cfg["seedrow"] = 11
 cfg["diffrow"] = 12
+cfg["roomrow"] = 13
 
 cfg["window"] = false
 

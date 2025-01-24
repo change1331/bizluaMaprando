@@ -2,6 +2,7 @@
 first=true
 -- width and height of icons
 xoffset=254
+xmax=256+142
 w=16
 h=16
 require("cfg")
@@ -23,17 +24,21 @@ function bigletter(addr)
 	i = 2
 	b = 0
 	-- length of all big letter strings
+	lastc = c
 	while i < 0x40 do
 		if c < 0x0040 then
 			c = c -0x0020
 			str = str .. string.char(c+97)
 		elseif c == 127 then
 			-- we only care about the last part of the string
-			str = ""
+			if lastc ==c then
+				str = ""
+			end
 		else
 			c = c -0x0030
 			str = str .. string.char(c+97)
 		end
+		lastc = c
 		c = memory.read_u16_le(addr+i)
 		i = i + 2
 	end
@@ -50,18 +55,28 @@ function draw(x,y,img, scale)
 		gui.drawImage(img ..".png",xoffset+x*w,y*h,w*sc,h*sc)
 	end
 end
-function text(x,y,str,clr)
+function text(x,y,str,clr,size)
+	sz = (size == nil and 10) or size
 	if win ~= 0 then
-		forms.drawString(win, xoffset+x*w,y*h,str,clr,nil,12)
+		forms.drawString(win,xoffset+x*w,y*h,str,clr,nil,sz)
 	else
-		gui.drawString(xoffset+x*w,y*h,str,clr,nil,12)
+		gui.drawString(xoffset+x*w,y*h,str,clr,nil,sz)
 	end
 end
-function rect(x,y,color)
+function textright(x, y, str, clr, size)
+	sz = (size == nil and 10) or size
 	if win ~= 0 then
-		forms.drawRectangle(win, xoffset+x*w, y*h+2, w-2, h-2,color, "black")
+		forms.drawString(win,xmax-x*w,y,str,clr,nil,sz,nil,nil,"right")
 	else
-		gui.drawRectangle(xoffset+x*w, y*h+2, w-2, h-2,color, "black")
+		gui.drawString(xmax-x*w,y*h,str,clr,nil,sz, nil, nil, "right")
+	end
+end
+function rect(x,y,color, size)
+	sz = (size == nil and 10) or size
+	if win ~= 0 then
+		forms.drawRectangle(win, xoffset+x*w, y*h+2, sz, sz,color, "black")
+	else
+		gui.drawRectangle(xoffset+x*w, y*h+2, sz, sz,color, "black")
 	end
 end
 --items 09A4, walljump enabled dfff05
@@ -165,9 +180,13 @@ function boss()
 				x = cfg[b][1]
 				y = cfg[b][2]
 				sc = cfg[b][3]
-				draw(x, y, objflags[i][1], sc)
 				if val&f~=0 then
+					--text(x,y,i, "white")
+					draw(x, y, objflags[i][1], sc)
 					drawequip(x, y, sc)
+				else
+					--text(x,y,i+1, "white", 56)
+					draw(x, y, objflags[i][1], sc)
 				end
 			end
 		end
@@ -218,17 +237,29 @@ function map(r)
 		pauseloc =-1
 	end
 	rect(loc, r,"white")
+	
 	flag = 1
 	for i = 1,#mapenum do
 		if mapflags&flag ~= 0 then
 			val=mainmemory.readbyte(0xD908+i-1)
-			if val ~= 0 and mapenum[i] then
+			
+			if val ~= 0 then
 				text(i+2, r,mapenum[i][1], mapenum[i][2])
 			else
 				text(i+2, r,mapenum[i][1], "white")
 			end
 		end
 		flag = flag * 2
+	end
+	val = 0x70000 + mainmemory.read_u16_le(0x079B)
+	if not rooms then
+		return
+	end
+	for i = 1, #rooms do 
+		room = rooms[i]
+		if room and room["rom_address"]==val then
+			textright(0,cfg["roomrow"],room["name"],"white")
+		end
 	end
 end
 --general gameplay flags
@@ -353,6 +384,13 @@ function done()
 end
 win = 0
 
+rooms=nil
+f = io.open("rooms.json", "r")
+if f ~= nil then
+	s = f:read("*all")
+	f:close()
+	rooms = json.decode(s)
+end
 while true do
 	if emu.getsystemid() == "SNES" then
 		if first then
@@ -422,8 +460,8 @@ while true do
 			beams()
 			flags()
 			
-			text(0,cfg["seedrow"],seed,"white")
-			text(0,cfg["diffrow"],diff,"white")
+			textright(0,cfg["seedrow"],seed,"white")
+			textright(0,cfg["diffrow"],diff,"white")
 			boss()
 			forms.refresh(win)
 			frame = 0
