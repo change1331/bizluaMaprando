@@ -158,7 +158,6 @@ function bossesdead()
 	for i = 0, 3 do
 		val=mainmemory.read_u16_le(objflags[i][2])
 		f= objflags[i][3]
-		
 		if val&f~=0 then
 			bn = bn+1
 		end
@@ -340,12 +339,17 @@ mapenum = {
 	{"T","brown"},
 }
 frame = 0
+hash = ""
 seed = ""
 diff = ""
 objflags = {}
 noobj = false;
 reqanimals = false
 function setup()
+	hash = mem(0xdffef0)
+	if(hash:match("%W")) then
+		return
+	end
 	seed = bigletter(0xceb240 + (224 - 128) * 0x40)
 	seed = seed .. " " .. mem(0xdffef0)
 	diff = bigletter(0xceb240 + (226 - 128) * 0x40)
@@ -395,6 +399,13 @@ while true do
 	if emu.getsystemid() == "SNES" then
 		if first then
 			first = false
+			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
+				setup()
+				if hash:match("%W") or hash == "" then
+					client.SetGameExtraPadding(0,0,0,0)
+					goto continue
+				end
+			end
 			getconfig()
 			if cfg["window"] then
 				if win == 0 then
@@ -411,48 +422,13 @@ while true do
 			end
 			event.onexit(done, "writecfg")
 		end
-		mouse = input.getmouse()
-		if false and mouse["Left"] then
-			x = mouse["X"] - xoffset
-			if x > 0 then
-				x = math.floor(x / 16)
-				y = math.floor(mouse["Y"]/16)
-				bd = bossesdead() == 4
-				console.log(bossesdead(), bd)
-				mbd = mainmemory.readbyte(mb[2])&mb[3]~=0
-				for k, v in pairs(cfg) do
-					if string.find(k,"row") then
-						if y == v then
-							console.log(k)
-						end
-					else
-						if x >= v[1] and y >= v[2] and x < v[1]+v[3] and y < v[2]+v[3] then
-							if k == "animals" then
-								if bd and mbd then
-									console.log(k)
-								end
-							elseif k == "motherbrain2" then
-								if (bd or noobj) and mbd == false then
-									console.log(k)
-								end
-							elseif string.find(k, "boss") then
-								if noobj == false and bd == false then
-									console.log(k)
-								end
-							else
-								console.log(k)
-							end
-						end
-					end
-				end
-				
-				console.log("edit mode", x, y)
-
-			end
-		end
 		if frame == 30 and goodcore then
-			if seed ~= mem(0xdffef0) then
+			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
 				setup()
+				if hash:match("%W") or hash == "" then
+					client.SetGameExtraPadding(0,0,0,0)
+					goto continue
+				end
 			end
 			forms.clear(win, "black")
 			map(cfg["maprow"])
@@ -467,6 +443,7 @@ while true do
 			frame = 0
 		end
 	end
+	::continue::
 	frame = frame+1
 	emu.frameadvance()
 end
