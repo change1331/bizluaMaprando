@@ -378,16 +378,14 @@ function setup()
 		m = memory.read_u16_le(0x8FEBC0+i*2)
 		f = memory.read_u16_le(0x8FEBE8+i*2)
 		while m ~= 0xFFFF do
-			print(i, m, f, #objflags)
 			m = memory.read_u16_le(0x8FEBC0+i*2)
 			f = memory.read_u16_le(0x8FEBE8+i*2)
 			val=mainmemory.read_u16_le(m)
 			for j = 1,#bossenum do
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
 					objflags[i] = bossenum[j]
-					print(objflags[i][0],objflags[i][1],objflags[i][2])
 				end
-				if m == 0xD82B and f == 1 then 
+				if m == 0xD82B and f == 1 then
 					--nophantoon = false;
 				end
 			end
@@ -395,7 +393,7 @@ function setup()
 		end
 	end
 	if nophantoon then
-		flagenum[#flagenum] = {"atomic", 0xD82B, 1}
+		flagenum[#flagenum+1] = {"atomic", 0xD82B, 1}
 	end
 end
 goodcore = true;
