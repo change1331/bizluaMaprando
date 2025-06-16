@@ -155,7 +155,7 @@ end
 -- flag loc 8FEBC0, flag 8FEBC8 indexed
 function bossesdead()
 	bn = 0
-	for i = 0, 3 do
+	for i = 0, #objflags do
 		val=mainmemory.read_u16_le(objflags[i][2])
 		f= objflags[i][3]
 		if val&f~=0 then
@@ -164,32 +164,46 @@ function bossesdead()
 	end
 	return bn
 end
+bossset =0
+bossrefresh = 0
 function boss()
-	if noobj then 
+	
+	if noobj then
 		motherbrain()
 	else
 		-- objectives
-		if bossesdead() == 4 then
+		if bossesdead() == #objflags then
 			motherbrain()
 		else
+			if #objflags > 3  and bossrefresh > 5 then
+				bossset = bossset +4
+				if bossset > #objflags then
+					bossset = 0
+				end
+				bossrefresh = 0
+			end
 			for i = 0, 3 do
-				val=mainmemory.read_u16_le(objflags[i][2])
-				f= objflags[i][3]
-				b = "boss"..i
-				x = cfg[b][1]
-				y = cfg[b][2]
-				sc = cfg[b][3]
-				if val&f~=0 then
-					--text(x,y,i, "white")
-					draw(x, y, objflags[i][1], sc)
-					drawequip(x, y, sc)
-				else
-					--text(x,y,i+1, "white", 56)
-					draw(x, y, objflags[i][1], sc)
+				seti = i+bossset
+				if seti < #objflags then
+					val=mainmemory.read_u16_le(objflags[seti][2])
+					f= objflags[seti][3]
+					b = "boss"..i
+					x = cfg[b][1]
+					y = cfg[b][2]
+					sc = cfg[b][3]
+					if val&f~=0 then
+						--text(x,y,i, "white")
+						draw(x, y, objflags[seti][1], sc)
+						drawequip(x, y, sc)
+					else
+						--text(x,y,i+1, "white", 56)
+						draw(x, y, objflags[seti][1], sc)
+					end
 				end
 			end
 		end
 	end
+	bossrefresh = bossrefresh +1
 end
 function motherbrain()
 	mb2 = mainmemory.readbyte(mb[2])
@@ -360,9 +374,14 @@ function setup()
 	if val==0xECA0 then 
 		noobj = true
 	else
-		for i = 0,3 do
+		i=0
+		m = memory.read_u16_le(0x8FEBC0+i*2)
+		f = memory.read_u16_le(0x8FEBE8+i*2)
+		print(m, f)
+		while m ~= 0xFFFF do
+			print(i, m, f, #objflags)
 			m = memory.read_u16_le(0x8FEBC0+i*2)
-			f = memory.read_u16_le(0x8FEBC8+i*2)
+			f = memory.read_u16_le(0x8FEBE8+i*2)
 			val=mainmemory.read_u16_le(m)
 			for j = 1,#bossenum do
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
@@ -372,6 +391,7 @@ function setup()
 					nophantoon = false;
 				end
 			end
+			i=i+1
 		end
 	end
 	if nophantoon then
