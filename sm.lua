@@ -172,7 +172,7 @@ function boss()
 		motherbrain()
 	else
 		-- objectives
-		if bossesdead() == #objflags then
+		if bossesdead() == #objflags+1 then
 			motherbrain()
 		else
 			if #objflags > 3  and bossrefresh > 5 then
