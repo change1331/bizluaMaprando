@@ -184,7 +184,7 @@ function boss()
 			end
 			for i = 0, 3 do
 				seti = i+bossset
-				if seti < #objflags then
+				if seti <= #objflags then
 					val=mainmemory.read_u16_le(objflags[seti][2])
 					f= objflags[seti][3]
 					b = "boss"..i
@@ -377,7 +377,6 @@ function setup()
 		i=0
 		m = memory.read_u16_le(0x8FEBC0+i*2)
 		f = memory.read_u16_le(0x8FEBE8+i*2)
-		print(m, f)
 		while m ~= 0xFFFF do
 			print(i, m, f, #objflags)
 			m = memory.read_u16_le(0x8FEBC0+i*2)
@@ -386,9 +385,10 @@ function setup()
 			for j = 1,#bossenum do
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
 					objflags[i] = bossenum[j]
+					print(objflags[i][0],objflags[i][1],objflags[i][2])
 				end
 				if m == 0xD82B and f == 1 then 
-					nophantoon = false;
+					--nophantoon = false;
 				end
 			end
 			i=i+1
