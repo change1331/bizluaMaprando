@@ -364,10 +364,31 @@ function setup()
 	if(hash:match("%W")) then
 		return
 	end
-	seed = bigletter(0xceb240 + (224 - 128) * 0x40)
-	seed = seed .. " " .. mem(0xdffef0)
-	diff = bigletter(0xceb240 + (226 - 128) * 0x40)
-	diff = diff .. " " .. bigletter(0xceb240 + (228 - 128) * 0x40)
+
+
+	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
+	if diff == "VERYHARD" then
+		diff = "VHARD"
+	elseif diff == "CUSTOM" then
+		diff = "CUST"
+	end
+	prog = bigletter(0xceb240 + (226 - 128) * 0x40)
+	if prog == "TECHNICAL" then
+		prog = "TECH"
+	elseif prog == "CHALLNGE" then
+		prog = "CHAL"
+	elseif prog == "DESOLATE" then
+		prog = "DESO"
+	elseif prog == "CUSTOM" then
+		prog = "CUST"
+	end
+	qol = bigletter(0xceb240 + (228 - 128) * 0x40)
+	if qol == "DEFAULT" then
+		qol = "DEF"
+	elseif qol == "CUSTOM" then
+		qol = "CUST"
+	end
+
 	nophantoon = true
 	reqanimals=memory.read_u32_le(0xa1f000)==0xffff
 	val=memory.read_u16_le(0x83AAD2)
@@ -395,6 +416,8 @@ function setup()
 	if nophantoon then
 		flagenum[#flagenum+1] = {"atomic", 0xD82B, 1}
 	end
+	seed = "SEED: " .. hash
+	diff = diff .. " " .. prog .. " " .. qol
 end
 goodcore = true;
 function done()
@@ -453,9 +476,9 @@ while true do
 			items()
 			beams()
 			flags()
-			
+			ob = bossesdead() .. "/" .. #objflags +1
 			textright(0,cfg["seedrow"],seed,"white")
-			textright(0,cfg["diffrow"],diff,"white")
+			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
 			boss()
 			forms.refresh(win)
 			frame = 0
