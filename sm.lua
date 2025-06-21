@@ -155,6 +155,9 @@ end
 -- flag loc 8FEBC0, flag 8FEBC8 indexed
 function bossesdead()
 	bn = 0
+	if #objflags == 0 then
+		return bn
+	end
 	for i = 0, #objflags do
 		val=mainmemory.read_u16_le(objflags[i][2])
 		f= objflags[i][3]
@@ -168,37 +171,33 @@ bossset =0
 bossrefresh = 0
 function boss()
 	
-	if noobj then
+	-- objectives
+	if noobj or #objflags == 0 or bossesdead() == #objflags+1 then
 		motherbrain()
 	else
-		-- objectives
-		if bossesdead() == #objflags+1 then
-			motherbrain()
-		else
-			if #objflags > 3  and bossrefresh > 5 then
-				bossset = bossset +4
-				if bossset > #objflags then
-					bossset = 0
-				end
-				bossrefresh = 0
+		if #objflags > 3  and bossrefresh > 5 then
+			bossset = bossset +4
+			if bossset > #objflags then
+				bossset = 0
 			end
-			for i = 0, 3 do
-				seti = i+bossset
-				if seti <= #objflags then
-					val=mainmemory.read_u16_le(objflags[seti][2])
-					f= objflags[seti][3]
-					b = "boss"..i
-					x = cfg[b][1]
-					y = cfg[b][2]
-					sc = cfg[b][3]
-					if val&f~=0 then
-						--text(x,y,i, "white")
-						draw(x, y, objflags[seti][1], sc)
-						drawequip(x, y, sc)
-					else
-						--text(x,y,i+1, "white", 56)
-						draw(x, y, objflags[seti][1], sc)
-					end
+			bossrefresh = 0
+		end
+		for i = 0, 3 do
+			seti = i+bossset
+			if seti <= #objflags then
+				val=mainmemory.read_u16_le(objflags[seti][2])
+				f= objflags[seti][3]
+				b = "boss"..i
+				x = cfg[b][1]
+				y = cfg[b][2]
+				sc = cfg[b][3]
+				if val&f~=0 then
+					--text(x,y,i, "white")
+					draw(x, y, objflags[seti][1], sc)
+					drawequip(x, y, sc)
+				else
+					--text(x,y,i+1, "white", 56)
+					draw(x, y, objflags[seti][1], sc)
 				end
 			end
 		end
@@ -476,7 +475,8 @@ while true do
 			items()
 			beams()
 			flags()
-			ob = bossesdead() .. "/" .. #objflags +1
+			totobj = ((noobj or #objflags) == 0 and 0) or #objflags + 1
+			ob = bossesdead() .. "/" .. totobj
 			textright(0,cfg["seedrow"],seed,"white")
 			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
 			boss()
