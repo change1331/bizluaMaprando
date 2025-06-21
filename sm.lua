@@ -259,7 +259,7 @@ function map(r)
 	text(0,r, "MAPS:", "yellow")
 	memory.usememorydomain("CARTRAM")
 	mapflags=rom_readbyte(0x2600)
-	memory.usememorydomain("System Bus")
+	setmem()
 	
 	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
@@ -387,8 +387,6 @@ function setup()
 	if(hash:match("%W")) then
 		return
 	end
-
-
 	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
 	if diff == "VERYHARD" then
 		diff = "VHARD"
@@ -459,14 +457,21 @@ if f ~= nil then
 	f:close()
 	rooms = json.decode(s)
 end
+function setmem()
+	if goodcore == false then
+		memory.usememorydomain("CARTROM")
+		return
+	end
+	memory.usememorydomain("System Bus")
+end
 while true do
 	if emu.getsystemid() == "SNES" then
 		if first and frame == 30 then
+			
 			goodcore = memory.usememorydomain("System Bus")
 			if goodcore == false then
 				memory.usememorydomain("CARTROM")
 			end
-
 			first = false
 			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
 				setup()
@@ -488,7 +493,7 @@ while true do
 			
 			event.onexit(done, "writecfg")
 		end
-		if frame == 30 and goodcore then
+		if frame == 30 then
 			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
 				setup()
 				if hash:match("%W") or hash == "" then
@@ -496,6 +501,7 @@ while true do
 					goto continue
 				end
 			end
+
 			forms.clear(win, "black")
 			map(cfg["maprow"])
 			items()
@@ -507,6 +513,7 @@ while true do
 			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
 			boss()
 			forms.refresh(win)
+
 			frame = 0
 		end
 	end
