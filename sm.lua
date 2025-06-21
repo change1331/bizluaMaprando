@@ -6,21 +6,45 @@ xmax=256+142
 w=16
 h=16
 require("cfg")
+function snes2pc(addr)
+	a = addr >> 1
+	a = a & 0x3F8000
+	a = a | (addr & 0x7FFF)
+	return a
+end
+function rom_readbyte(addr)
+	if goodcore then
+		return memory.readbyte(addr)
+	end
+	return memory.readbyte(snes2pc(addr))
+end
+function rom_read_u16(addr)
+	if goodcore then
+		return memory.read_u16_le(addr)
+	end
+	return memory.read_u16_le(snes2pc(addr))
+end
+function rom_read_u32(addr)
+	if goodcore then
+		return memory.read_u32_le(addr)
+	end
+	return memory.read_u32_le(snes2pc(addr))
+end
 function mem(addr)
 	str = ""
-	c = memory.readbyte(addr)
+	c = rom_readbyte(addr)
 	i = 1
 	-- 0 terminated strings
 	while c ~= 0 do
 		str = str .. string.char(c)
-		c = memory.readbyte(addr+i)
+		c = rom_readbyte(addr+i)
 		i = i + 1
 	end
 	return str
 end
 function bigletter(addr)
 	str = ""
-	c = memory.readbyte(addr)
+	c = rom_readbyte(addr)
 	i = 2
 	b = 0
 	-- length of all big letter strings
@@ -39,7 +63,7 @@ function bigletter(addr)
 			str = str .. string.char(c+97)
 		end
 		lastc = c
-		c = memory.read_u16_le(addr+i)
+		c = rom_read_u16(addr+i)
 		i = i + 2
 	end
 	return string.upper(str)
@@ -101,7 +125,7 @@ function items()
 		end
 		i = i * 2
 	end
-	wj=memory.readbyte(0xdfff05)
+	wj=rom_readbyte(0xdfff05)
 	if wj&1==1 then
 		i=0x400
 		x = cfg[walljump][1]
@@ -234,7 +258,7 @@ pauseloc=-1
 function map(r)
 	text(0,r, "MAPS:", "yellow")
 	memory.usememorydomain("CARTRAM")
-	mapflags=memory.readbyte(0x2600)
+	mapflags=rom_readbyte(0x2600)
 	memory.usememorydomain("System Bus")
 	
 	loc = mainmemory.readbyte(0x1F5B)+3
@@ -389,17 +413,17 @@ function setup()
 	end
 
 	nophantoon = true
-	reqanimals=memory.read_u32_le(0xa1f000)==0xffff
-	val=memory.read_u16_le(0x83AAD2)
+	reqanimals= rom_read_u32(0xa1f000)==0xffff
+	val=rom_read_u16(0x83AAD2)
 	if val==0xECA0 then 
 		noobj = true
 	else
 		i=0
-		m = memory.read_u16_le(0x8FEBC0+i*2)
-		f = memory.read_u16_le(0x8FEBE8+i*2)
+		m = rom_read_u16(0x8FEBC0+i*2)
+		f = rom_read_u16(0x8FEBE8+i*2)
 		while m ~= 0xFFFF do
-			m = memory.read_u16_le(0x8FEBC0+i*2)
-			f = memory.read_u16_le(0x8FEBE8+i*2)
+			m = rom_read_u16(0x8FEBC0+i*2)
+			f = rom_read_u16(0x8FEBE8+i*2)
 			val=mainmemory.read_u16_le(m)
 			for j = 1,#bossenum do
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
@@ -418,7 +442,7 @@ function setup()
 	seed = "SEED: " .. hash
 	diff = diff .. " " .. prog .. " " .. qol
 end
-goodcore = true;
+goodcore = true
 function done()
 	writeconfig()
 	if win ~= 0 then
@@ -437,7 +461,12 @@ if f ~= nil then
 end
 while true do
 	if emu.getsystemid() == "SNES" then
-		if first then
+		if first and frame == 30 then
+			goodcore = memory.usememorydomain("System Bus")
+			if goodcore == false then
+				memory.usememorydomain("CARTROM")
+			end
+
 			first = false
 			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
 				setup()
@@ -456,10 +485,7 @@ while true do
 			else
 				client.SetGameExtraPadding(0,0,142,0)
 			end
-			goodcore = memory.usememorydomain("System Bus")
-			if goodcore == false then
-				console.log("Current core unsupported.")
-			end
+			
 			event.onexit(done, "writecfg")
 		end
 		if frame == 30 and goodcore then
