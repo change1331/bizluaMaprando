@@ -25,14 +25,14 @@ cfg["tube"] = {8,1,1}
 cfg["motherbrain2"] = {0,2,8}
 cfg["ship"] = {0,2,8}
 cfg["animals"] = {0,2,8}
-cfg["boss0"] = {0,2,4}
-cfg["boss1"] = {4,2,4}
+cfg["boss1"] = {0,2,4}
+cfg["boss2"] = {4,2,4}
 cfg["shak"] = {8,2,1}
 
 cfg["atomic"] = {8,3,1}
 
-cfg["boss2"] = {0,6,4}
-cfg["boss3"] = {4,6,4}
+cfg["boss3"] = {0,6,4}
+cfg["boss4"] = {4,6,4}
 
 cfg["maprow"]= 10
 cfg["seedrow"] = 11

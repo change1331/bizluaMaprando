@@ -103,7 +103,7 @@ function rect(x,y,color, size)
 		gui.drawRectangle(xoffset+x*w, y*h+2, sz, sz,color, "black")
 	end
 end
---items 09A4, walljump enabled dfff05
+--items 09A4-collected 09A2-equiped, walljump enabled dfff05
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	eq=mainmemory.read_u16_le(0x09A2)
@@ -182,7 +182,7 @@ function bossesdead()
 	if #objflags == 0 then
 		return bn
 	end
-	for i = 0, #objflags do
+	for i = 1, #objflags do
 		val=mainmemory.read_u16_le(objflags[i][2])
 		f= objflags[i][3]
 		if val&f~=0 then
@@ -196,17 +196,17 @@ bossrefresh = 0
 function boss()
 	
 	-- objectives
-	if noobj or #objflags == 0 or bossesdead() == #objflags+1 then
+	if noobj or #objflags == 0 or bossesdead() == #objflags then
 		motherbrain()
 	else
-		if #objflags > 3  and bossrefresh > 5 then
+		if #objflags > 4  and bossrefresh > 5 then
 			bossset = bossset +4
 			if bossset > #objflags then
 				bossset = 0
 			end
 			bossrefresh = 0
 		end
-		for i = 0, 3 do
+		for i = 1, 4 do
 			seti = i+bossset
 			if seti <= #objflags then
 				val=mainmemory.read_u16_le(objflags[seti][2])
@@ -383,6 +383,9 @@ objflags = {}
 noobj = false;
 reqanimals = false
 function setup()
+	if hash == mem(0xdffef0) then
+		return
+	end
 	hash = mem(0xdffef0)
 	if(hash:match("%W")) then
 		return
@@ -420,18 +423,18 @@ function setup()
 		m = rom_read_u16(0x8FEBC0+i*2)
 		f = rom_read_u16(0x8FEBE8+i*2)
 		while m ~= 0xFFFF do
-			m = rom_read_u16(0x8FEBC0+i*2)
-			f = rom_read_u16(0x8FEBE8+i*2)
-			val=mainmemory.read_u16_le(m)
 			for j = 1,#bossenum do
 				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
-					objflags[i] = bossenum[j]
+					objflags[i+1] = bossenum[j]
 				end
 				if m == 0xD82B and f == 1 then
 					--nophantoon = false;
 				end
 			end
 			i=i+1
+			
+			m = rom_read_u16(0x8FEBC0+i*2)
+			f = rom_read_u16(0x8FEBE8+i*2)
 		end
 	end
 	if nophantoon then
@@ -473,7 +476,7 @@ while true do
 				memory.usememorydomain("CARTROM")
 			end
 			first = false
-			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
+			if hash == "" or hash:match("%W") then
 				setup()
 				if hash:match("%W") or hash == "" then
 					client.SetGameExtraPadding(0,0,0,0)
@@ -488,18 +491,16 @@ while true do
 				end
 				xoffset = 0
 			else
-				client.SetGameExtraPadding(0,0,142,0)
+				client.SetGameExtraPadding(0,0,160,0)
 			end
 			
 			event.onexit(done, "writecfg")
 		end
 		if frame == 30 then
-			if hash == "" or hash:match("%W") or hash ~= mem(0xdffef0) then
-				setup()
-				if hash:match("%W") or hash == "" then
-					client.SetGameExtraPadding(0,0,0,0)
-					goto continue
-				end
+			setup()
+			if hash:match("%W") or hash == "" then
+				client.SetGameExtraPadding(0,0,0,0)
+				goto continue
 			end
 
 			forms.clear(win, "black")
@@ -507,7 +508,7 @@ while true do
 			items()
 			beams()
 			flags()
-			totobj = ((noobj or #objflags) == 0 and 0) or #objflags + 1
+			totobj = ((noobj or #objflags) == 0 and 0) or #objflags
 			ob = bossesdead() .. "/" .. totobj
 			textright(0,cfg["seedrow"],seed,"white")
 			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
