@@ -493,7 +493,7 @@ while true do
 				end
 				xoffset = 0
 			else
-				client.SetGameExtraPadding(0,0,160,0)
+				client.SetGameExtraPadding(0,0,142,0)
 			end
 			
 			event.onexit(done, "done")
