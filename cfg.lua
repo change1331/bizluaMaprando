@@ -10,7 +10,8 @@ cfg["gravity"] = {4,0,1}
 cfg["morph"] = {5,0,1}
 cfg["bombs"] = {6,0,1}
 cfg["spring"] = {7,0,1}
-cfg["zebes"] = {8,0,1}
+cfg["grapple"] = {8,0,1}
+cfg["zebes"] = {9,0,1}
 
 cfg["wave"] = {0,1,1}
 cfg["plasma"] = {1,1,1}
@@ -19,17 +20,18 @@ cfg["hijump"] = {3,1,1}
 cfg["speed"] = {4,1,1}
 cfg["space"] = {5,1,1}
 cfg["screw"] = {6,1,1}
-cfg["walljump"] = {7,1,1}
-cfg["tube"] = {8,1,1}
+cfg["xray"] = {7,1,1}
+cfg["walljump"] = {8,1,1}
+cfg["tube"] = {9,1,1}
 
 cfg["motherbrain2"] = {0,2,8}
 cfg["ship"] = {0,2,8}
 cfg["animals"] = {0,2,8}
 cfg["boss1"] = {0,2,4}
 cfg["boss2"] = {4,2,4}
-cfg["shak"] = {8,2,1}
 
-cfg["atomic"] = {8,3,1}
+cfg["shak"] = {9,2,1}
+cfg["atomic"] = {9,3,1}
 
 cfg["boss3"] = {0,6,4}
 cfg["boss4"] = {4,6,4}
@@ -40,6 +42,7 @@ cfg["diffrow"] = 12
 cfg["roomrow"] = 13
 
 cfg["window"] = false
+cfg["version"] = "1.0"
 
 
 function getconfig() 
@@ -47,7 +50,12 @@ function getconfig()
     if f ~= nil then
         s = f:read("*all")
         f:close()
-        cfg = json.decode(s)
+        newcfg = json.decode(s)
+		if newcfg["version"] == cfg["version"] then
+			cfg = newcfg
+		else
+			--Console.log("Old config.json detected, using default settings.")
+		end
     end
 end
 

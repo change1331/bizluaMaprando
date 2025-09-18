@@ -108,7 +108,7 @@ function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	eq=mainmemory.read_u16_le(0x09A2)
 	i=1
-	while i <= 0x2000 do
+	while i <= 0x8000 do
 		item = itemenum[i]
 		if item then
 			x = cfg[item][1]
@@ -331,11 +331,14 @@ itemenum[0x20]="gravity"
 itemenum[4]="morph"
 itemenum[0x1000]="bombs"
 itemenum[2]="spring"
+itemenum[0x4000]="grapple"
 
 itemenum[0x100]="hijump"
 itemenum[0x2000]="speed"
 itemenum[0x200]="space"
 itemenum[8]="screw"
+itemenum[0x8000]="xray"
+
 walljump="walljump"
 -- icon, mem loc for flag, flag
 flagenum = {
@@ -445,11 +448,10 @@ function setup()
 end
 goodcore = true
 function done()
-	writeconfig()
 	if win ~= 0 then
 		forms.destroy(win)
 	end
-	event.unregisterbyname("writecfg")
+	event.unregisterbyname("done")
 end
 win = 0
 
@@ -494,7 +496,7 @@ while true do
 				client.SetGameExtraPadding(0,0,160,0)
 			end
 			
-			event.onexit(done, "writecfg")
+			event.onexit(done, "done")
 		end
 		if frame == 30 then
 			setup()
