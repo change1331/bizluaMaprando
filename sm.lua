@@ -42,6 +42,22 @@ function mem(addr)
 	end
 	return str
 end
+function mem0(addr)
+	str = ""
+	c = rom_readbyte(addr)
+	i = 1
+	-- 0 terminated strings
+	while c ~= 0 do
+		if (c == 01) then
+			str = str .. " "
+		else
+			str = str .. string.char(c+63)
+		end
+		c = rom_readbyte(addr+i)
+		i = i + 1
+	end
+	return str
+end
 function bigletter(addr)
 	str = ""
 	c = rom_readbyte(addr)
@@ -287,16 +303,20 @@ function map(r)
 		end
 		flag = flag * 2
 	end
-	val = 0x70000 + mainmemory.read_u16_le(0x079B)
-	if not rooms then
-		return
+end
+function room()
+	-- start at first state cond
+	r = rom_read_u16(0x079B)+11
+	state = rom_read_u16(0x8F0000+r)
+	while (state ~= 0xE5E6) do 
+		r=r+1
+		state = rom_read_u16(0x8F0000+r)
 	end
-	for i = 1, #rooms do 
-		room = rooms[i]
-		if room and room["rom_address"]==val then
-			textright(0,cfg["roomrow"],room["name"],"white")
-		end
-	end
+	r = r+2
+	-- r is now E5E6 room state addr
+	xtra = rom_read_u16(0x8F0000+r+16);
+	room_name_addr = rom_read_u16(0xb80000+xtra+9)
+	return mem0(0xE30000+room_name_addr+1)
 end
 --general gameplay flags
 function flags()
@@ -398,11 +418,15 @@ function setup()
 		diff = "VHARD"
 	elseif diff == "CUSTOM" then
 		diff = "CUST"
+	elseif diff == "EXTREME" then
+		diff = "XTRM"
+	elseif diff == "INSANE" then
+		diff = "INSN"
 	end
 	prog = bigletter(0xceb240 + (226 - 128) * 0x40)
 	if prog == "TECHNICAL" then
 		prog = "TECH"
-	elseif prog == "CHALLNGE" then
+	elseif prog == "CHALLENGE" then
 		prog = "CHAL"
 	elseif prog == "DESOLATE" then
 		prog = "DESO"
@@ -446,6 +470,7 @@ function setup()
 	seed = "SEED: " .. hash
 	diff = diff .. " " .. prog .. " " .. qol
 end
+
 goodcore = true
 function done()
 	if win ~= 0 then
@@ -455,13 +480,6 @@ function done()
 end
 win = 0
 
-rooms=nil
-f = io.open("rooms.json", "r")
-if f ~= nil then
-	s = f:read("*all")
-	f:close()
-	rooms = json.decode(s)
-end
 function setmem()
 	if goodcore == false then
 		memory.usememorydomain("CARTROM")
@@ -514,6 +532,8 @@ while true do
 			ob = bossesdead() .. "/" .. totobj
 			textright(0,cfg["seedrow"],seed,"white")
 			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
+			room_name = room()
+			textright(0,cfg["roomrow"],room_name,"white")
 			boss()
 			forms.refresh(win)
 
