@@ -47,11 +47,19 @@ function mem0(addr)
 	c = rom_readbyte(addr)
 	i = 1
 	-- 0 terminated strings
+	font = {}
+	font[64] = "-"
+	font[65] = "'"
+	font[66] = "."
 	while c ~= 0 do
-		if (c == 01) then
+		if c == 1 then
 			str = str .. " "
-		else
+		elseif c < 28 then
 			str = str .. string.char(c+63)
+		elseif c > 53 and c < 64 then
+			str = str .. string.char(c-6)
+		else
+			str = str .. font[c]
 		end
 		c = rom_readbyte(addr+i)
 		i = i + 1
@@ -68,7 +76,7 @@ function bigletter(addr)
 	while i < 0x40 do
 		if c < 0x0040 then
 			c = c -0x0020
-			str = str .. string.char(c+97)
+			str = str .. string.char(c+65)
 		elseif c == 127 then
 			-- we only care about the last part of the string
 			if lastc ==c then
@@ -76,7 +84,7 @@ function bigletter(addr)
 			end
 		else
 			c = c -0x0030
-			str = str .. string.char(c+97)
+			str = str .. string.char(c+65)
 		end
 		lastc = c
 		c = rom_read_u16(addr+i)
@@ -108,7 +116,7 @@ function textright(x, y, str, clr, size)
 	if win ~= 0 then
 		forms.drawString(win,xmax-x*w,y,str,clr,nil,sz,nil,nil,"right")
 	else
-		gui.drawString(xmax-x*w,y*h,str,clr,nil,sz, nil, nil, "right")
+		gui.drawString(xmax-x*w,y*h,str,clr,nil,sz,nil, nil, "right")
 	end
 end
 function rect(x,y,color, size)
@@ -305,8 +313,8 @@ function map(r)
 	end
 end
 function room()
-	-- start at first state cond
-	r = rom_read_u16(0x079B)+11
+	r=mainmemory.read_u16_le(0x079b)
+	r=r+11
 	state = rom_read_u16(0x8F0000+r)
 	while (state ~= 0xE5E6) do 
 		r=r+1
@@ -332,6 +340,23 @@ function flags()
 			drawequip(x, y)
 		end
 	end
+end
+function timer()
+	msecperframe = 100 / 60.09881186
+	memory.usememorydomain("CARTRAM")
+	frames = rom_read_u32(0x1E10)
+	setmem()
+	tmsecs = frames * msecperframe
+	secs = tmsecs / 100
+	msecs = tmsecs % 100
+	mins = secs / 60
+	secs = secs % 60
+	hours = mins / 60
+	mins = mins % 60
+
+	time = string.format("%02d:%02d:%02d:%02d",math.floor(hours),
+		math.floor(mins),math.floor(secs),math.floor(msecs))
+	return time
 end
 
 beamenum = {}
@@ -398,9 +423,7 @@ mapenum = {
 	{"M","blue"},
 	{"T","brown"},
 }
-frame = 0
 hash = ""
-seed = ""
 diff = ""
 objflags = {}
 noobj = false;
@@ -467,7 +490,6 @@ function setup()
 	if nophantoon then
 		flagenum[#flagenum+1] = {"atomic", 0xD82B, 1}
 	end
-	seed = "SEED: " .. hash
 	diff = diff .. " " .. prog .. " " .. qol
 end
 
@@ -488,59 +510,59 @@ function setmem()
 	memory.usememorydomain("System Bus")
 end
 while true do
-	if emu.getsystemid() == "SNES" then
-		if first and frame == 30 then
-			
-			goodcore = memory.usememorydomain("System Bus")
-			if goodcore == false then
-				memory.usememorydomain("CARTROM")
-			end
-			first = false
-			if hash == "" or hash:match("%W") then
-				setup()
-				if hash:match("%W") or hash == "" then
-					client.SetGameExtraPadding(0,0,0,0)
-					goto continue
-				end
-			end
-			getconfig()
-			if cfg["window"] then
-				if win == 0 then
-					form = forms.newform(142,224)
-					win = forms.pictureBox(form, nil, nil, 142, 224)
-				end
-				xoffset = 0
-			else
-				client.SetGameExtraPadding(0,0,142,0)
-			end
-			
-			event.onexit(done, "done")
+	if emu.getsystemid() ~= "SNES" then
+		goto continue
+	end
+	if first then
+		goodcore = memory.usememorydomain("System Bus")
+		if goodcore == false then
+			memory.usememorydomain("CARTROM")
 		end
-		if frame == 30 then
+		first = false
+		if hash == "" or hash:match("%W") then
 			setup()
 			if hash:match("%W") or hash == "" then
 				client.SetGameExtraPadding(0,0,0,0)
 				goto continue
 			end
-
-			forms.clear(win, "black")
-			map(cfg["maprow"])
-			items()
-			beams()
-			flags()
-			totobj = ((noobj or #objflags) == 0 and 0) or #objflags
-			ob = bossesdead() .. "/" .. totobj
-			textright(0,cfg["seedrow"],seed,"white")
-			textright(0,cfg["diffrow"],ob .. " "..diff,"white")
-			room_name = room()
-			textright(0,cfg["roomrow"],room_name,"white")
-			boss()
-			forms.refresh(win)
-
-			frame = 0
 		end
+		getconfig()
+		if cfg["window"] then
+			if win == 0 then
+				form = forms.newform(142,224)
+				win = forms.pictureBox(form, nil, nil, 142, 224)
+			end
+			xoffset = 0
+		else
+			client.SetGameExtraPadding(0,0,142,0)
+		end
+		
+		event.onexit(done, "done")
 	end
+	pressed = input.get()
+	if (pressed["Number1"]) then
+		console.log("1")
+	end
+	setup()
+	if hash:match("%W") or hash == "" then
+		client.SetGameExtraPadding(0,0,0,0)
+		goto continue
+	end
+
+	forms.clear(win, "black")
+	map(cfg["maprow"])
+	items()
+	beams()
+	flags()
+	totobj = ((noobj or #objflags) == 0 and 0) or #objflags
+	ob = bossesdead() .. "/" .. totobj
+	time = timer()
+	textright(0,cfg["seedrow"],hash .. " "..time,"white")
+	textright(0,cfg["diffrow"],ob .. " "..diff,"white")
+	room_name = room()
+	boss()
+	textright(0,cfg["roomrow"],room_name,"white")
+	forms.refresh(win)
 	::continue::
-	frame = frame+1
 	emu.frameadvance()
 end

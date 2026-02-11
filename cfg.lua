@@ -42,6 +42,7 @@ cfg["seedrow"] = 11
 cfg["diffrow"] = 12
 cfg["roomrow"] = 13
 
+
 cfg["window"] = false
 cfg["version"] = "1.0"
 
