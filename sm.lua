@@ -114,7 +114,7 @@ end
 function textright(x, y, str, clr, size)
 	sz = (size == nil and 10) or size
 	if win ~= 0 then
-		forms.drawString(win,xmax-x*w,y,str,clr,nil,sz,nil,nil,"right")
+		forms.drawString(win,xmax-x*w,y*h,str,clr,nil,sz,nil,nil,"right")
 	else
 		gui.drawString(xmax-x*w,y*h,str,clr,nil,sz,nil, nil, "right")
 	end
@@ -131,72 +131,55 @@ end
 function items()
 	val=mainmemory.read_u16_le(0x09A4)
 	eq=mainmemory.read_u16_le(0x09A2)
-	i=1
-	while i <= 0x8000 do
-		item = itemenum[i]
-		if item then
-			x = cfg[item][1]
-			y = cfg[item][2]
-			sc = cfg[item][3]
-			if (val&i)~=0 then
-				draw(x, y, item, sc)
-				if (eq&i)==0 then
-					drawequip(x, y, sc)
-				end
-			else
-				draw(x,y,"b"..item, sc)
-			end
-		end
-		i = i * 2
+	for i, item in pairs(itemenum) do
+		drawEq(val,eq,i,item)
 	end
-	wj=rom_readbyte(0xdfff05)
-	if wj&1==1 then
+	extras=rom_readbyte(0xdfff05)
+	if extras&1~=0 then
 		i=0x400
-		x = cfg[walljump][1]
-		y = cfg[walljump][2]
-		sc = cfg[walljump][3]
-		if (val&i)~=0 then
-			draw(x, y, walljump, sc)
-			if (eq&i) == 0 then
-				drawequip(x, y, sc)
-			end
-		else
-			draw(x, y, "b"..walljump, sc)
+		drawEq(val,eq,i,walljump)
+	end
+	if extras&2~=0 then
+		--split boosters
+		bl=0x40
+		sl=0x80
+		both = bl+sl
+		if val&both==both then
+			-- do I draw reg booster here??? idk
+			drawEq(val,eq,both,speed)
+			return
 		end
+		drawEq(val,eq,sl,spark)
+		drawEq(val,eq,bl,blue)
 	else
-		--wj icon?
-		--draw(walljump[2], walljump[3], walljump[1])
+		sp = 0x2000
+		drawEq(val,eq,sp,speed)
 	end
 end
 --beams 09A8, hyperbeam 0A76
 function beams()
-	f = false
 	val=mainmemory.read_u16_le(0x0A76)
 	if val==0x8000 then
 		draw(cfg[hyper][1], cfg[hyper][2], hyper, cfg[hyper][3])
-		f = true
 	end
 	val=mainmemory.read_u16_le(0x09A8)
 	eq=mainmemory.read_u16_le(0x09A6)
-	i=1
-	while i ~= 0x2000 do
-		beam = beamenum[i]
-		if beam then
-			x = cfg[beam][1]
-			y = cfg[beam][2]
-			sc = cfg[beam][3]
-			if (val&i)~=0 then
-				
-				draw(x, y, beam, sc)
-				
-				if (eq&i)==0 or f then
-					drawequip(x, y, sc)
-				end
-			else
-				draw(x, y, "b" .. beam, sc)
-			end
+	for i,beam in pairs(beamenum) do
+		drawEq(val,eq,i,beam)
+	end
+end
+
+function drawEq(val,eq,f,name)
+	x = cfg[name][1]
+	y = cfg[name][2]
+	sc = cfg[name][3]
+	if (val&f)==f then
+		draw(x, y, name, sc)
+		if (eq&f)~=f then
+			drawequip(x, y, sc)
 		end
-		i = i * 2
+	else
+		draw(x, y, "b" .. name, sc)
 	end
 end
 
@@ -377,13 +360,14 @@ itemenum[4]="morph"
 itemenum[0x1000]="bombs"
 itemenum[2]="spring"
 itemenum[0x4000]="grapple"
-
 itemenum[0x100]="hijump"
-itemenum[0x2000]="speed"
 itemenum[0x200]="space"
 itemenum[8]="screw"
 itemenum[0x8000]="xray"
 
+speed="speed"
+blue="blue"
+spark="spark"
 walljump="walljump"
 -- icon, mem loc for flag, flag
 flagenum = {
@@ -423,6 +407,7 @@ mapenum = {
 	{"M","blue"},
 	{"T","brown"},
 }
+frames = 0
 hash = ""
 diff = ""
 objflags = {}
@@ -473,16 +458,15 @@ function setup()
 		m = rom_read_u16(0x8FEBC0+i*2)
 		f = rom_read_u16(0x8FEBE8+i*2)
 		while m ~= 0xFFFF do
-			for j = 1,#bossenum do
-				if bossenum[j] and bossenum[j][2] == m and bossenum[j][3] == f then
-					objflags[i+1] = bossenum[j]
+			for j, boss in pairs(bossenum) do
+				if boss[2] == m and boss[3] == f then
+					objflags[i+1] = boss
 				end
 				if m == 0xD82B and f == 1 then
-					--nophantoon = false;
+					--nophantoon = false
 				end
 			end
 			i=i+1
-			
 			m = rom_read_u16(0x8FEBC0+i*2)
 			f = rom_read_u16(0x8FEBE8+i*2)
 		end
@@ -513,6 +497,9 @@ while true do
 	if emu.getsystemid() ~= "SNES" then
 		goto continue
 	end
+	if frames ~= 30 then
+		goto continue
+	end
 	if first then
 		goodcore = memory.usememorydomain("System Bus")
 		if goodcore == false then
@@ -531,24 +518,19 @@ while true do
 			if win == 0 then
 				form = forms.newform(142,224)
 				win = forms.pictureBox(form, nil, nil, 142, 224)
+				client.SetGameExtraPadding(0,0,0,0)
 			end
 			xoffset = 0
+			xmax = 142
 		else
 			client.SetGameExtraPadding(0,0,142,0)
 		end
-		
 		event.onexit(done, "done")
 	end
 	pressed = input.get()
 	if (pressed["Number1"]) then
 		console.log("1")
 	end
-	setup()
-	if hash:match("%W") or hash == "" then
-		client.SetGameExtraPadding(0,0,0,0)
-		goto continue
-	end
-
 	forms.clear(win, "black")
 	map(cfg["maprow"])
 	items()
@@ -556,13 +538,14 @@ while true do
 	flags()
 	totobj = ((noobj or #objflags) == 0 and 0) or #objflags
 	ob = bossesdead() .. "/" .. totobj
-	time = timer()
-	textright(0,cfg["seedrow"],hash .. " "..time,"white")
+	textright(0,cfg["seedrow"],hash,"white")
 	textright(0,cfg["diffrow"],ob .. " "..diff,"white")
 	room_name = room()
 	boss()
 	textright(0,cfg["roomrow"],room_name,"white")
 	forms.refresh(win)
+	frames = 0
 	::continue::
+	frames = frames + 1
 	emu.frameadvance()
 end
