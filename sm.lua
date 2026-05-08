@@ -1,8 +1,8 @@
 -- first run through
 first=true
 -- width and height of icons
-xoffset=254
-xmax=256+142
+xoffset=256
+xmax=256+144
 w=16
 h=16
 require("cfg")
@@ -13,29 +13,20 @@ function snes2pc(addr)
 	return a
 end
 function rom_readbyte(addr)
-	if goodcore then
-		return memory.readbyte(addr)
-	end
 	return memory.readbyte(snes2pc(addr))
 end
 function rom_read_u16(addr)
-	if goodcore then
-		return memory.read_u16_le(addr)
-	end
 	return memory.read_u16_le(snes2pc(addr))
 end
 function rom_read_u32(addr)
-	if goodcore then
-		return memory.read_u32_le(addr)
-	end
 	return memory.read_u32_le(snes2pc(addr))
 end
-function mem(addr)
+function mem(addr, zero)
 	str = ""
 	c = rom_readbyte(addr)
 	i = 1
 	-- 0 terminated strings
-	while c ~= 0 do
+	while c ~= zero do
 		str = str .. string.char(c)
 		c = rom_readbyte(addr+i)
 		i = i + 1
@@ -134,38 +125,21 @@ function items()
 	for i, item in pairs(itemenum) do
 		drawEq(val,eq,i,item)
 	end
-	extras=rom_readbyte(0xdfff05)
-	if extras&1~=0 then
-		i=0x400
-		drawEq(val,eq,i,walljump)
-	end
-	if extras&2~=0 then
-		--split boosters
-		bl=0x40
-		sl=0x80
-		both = bl+sl
-		if val&both==both then
-			-- do I draw reg booster here??? idk
-			drawEq(val,eq,both,speed)
-			return
-		end
-		drawEq(val,eq,sl,spark)
-		drawEq(val,eq,bl,blue)
-	else
-		sp = 0x2000
-		drawEq(val,eq,sp,speed)
-	end
+
 end
 --beams 09A8, hyperbeam 0A76
 function beams()
-	val=mainmemory.read_u16_le(0x0A76)
-	if val==0x8000 then
-		draw(cfg[hyper][1], cfg[hyper][2], hyper, cfg[hyper][3])
-	end
 	val=mainmemory.read_u16_le(0x09A8)
 	eq=mainmemory.read_u16_le(0x09A6)
 	for i,beam in pairs(beamenum) do
 		drawEq(val,eq,i,beam)
+	end
+	if vanilla == false then
+		return
+	end
+	val=mainmemory.read_u16_le(0x0A76)
+	if val==0x8000 then
+		draw(cfg[hyper][1], cfg[hyper][2], hyper, cfg[hyper][3])
 	end
 end
 
@@ -201,7 +175,6 @@ end
 bossset =0
 bossrefresh = 0
 function boss()
-	
 	-- objectives
 	if noobj or #objflags == 0 or bossesdead() == #objflags then
 		motherbrain()
@@ -264,9 +237,10 @@ end
 pauseloc=-1
 function map(r)
 	text(0,r, "MAPS:", "yellow")
-	memory.usememorydomain("CARTRAM")
-	mapflags=rom_readbyte(0x2600)
-	setmem()
+	mapflags = 0xFF
+	if vanilla == false then
+		mapflags = memory.readbyte(0x2600, "CARTRAM")
+	end
 	
 	loc = mainmemory.readbyte(0x1F5B)+3
 	gs=mainmemory.readbyte(0x0998)
@@ -326,9 +300,7 @@ function flags()
 end
 function timer()
 	msecperframe = 100 / 60.09881186
-	memory.usememorydomain("CARTRAM")
-	frames = rom_read_u32(0x1E10)
-	setmem()
+	frames = memory.readbyte(0x1E10, "CARTRAM")
 	tmsecs = frames * msecperframe
 	secs = tmsecs / 100
 	msecs = tmsecs % 100
@@ -374,6 +346,7 @@ flagenum = {
 	{"zebes", 0xD820, 1},
 	{"tube", 0xd821, 8},
 	{"shak", 0xd821, 0x20},
+	{"atomic", 0xD82B, 1},
 }
 bossenum = {
 	{"pitroom",0xD823, 2},
@@ -410,17 +383,28 @@ mapenum = {
 frames = 0
 hash = ""
 diff = ""
+met = ""
 objflags = {}
-noobj = false;
+vanilla = false
+noobj = false
 reqanimals = false
+function vansetup()
+	vanilla = true
+	hash = "SuperMetroid"
+	diff = "Vanilla"
+	objflags[1] = bossenum[5]
+	objflags[2] = bossenum[7]
+	objflags[3] = bossenum[10]
+	objflags[4] = bossenum[15]
+	itemenum[0x2000]="speed"
+end
 function setup()
-	if hash == mem(0xdffef0) then
+	met = mem(0x7fc0, 0x30)
+	if met ~= "SUPERMETROID MAPRANDO" then
+		vansetup()
 		return
 	end
-	hash = mem(0xdffef0)
-	if(hash:match("%W")) then
-		return
-	end
+	hash = mem(0xdffef0, 0)
 	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
 	if diff == "VERYHARD" then
 		diff = "VHARD"
@@ -471,8 +455,16 @@ function setup()
 			f = rom_read_u16(0x8FEBE8+i*2)
 		end
 	end
-	if nophantoon then
-		flagenum[#flagenum+1] = {"atomic", 0xD82B, 1}
+	extras=rom_readbyte(0xdfff05)
+	if extras&1~=0 then
+		itemenum[0x400]="walljump"
+	end
+	if extras&2~=0 then
+		--split boosters
+		itemenum[0x40]="blue"
+		itemenum[0x80]="spark"
+	else
+		itemenum[0x2000]="speed"
 	end
 	diff = diff .. " " .. prog .. " " .. qol
 end
@@ -482,17 +474,14 @@ function done()
 	if win ~= 0 then
 		forms.destroy(win)
 	end
+	client.SetGameExtraPadding(0,0,0,0)
 	event.unregisterbyname("done")
 end
 win = 0
-
-function setmem()
-	if goodcore == false then
-		memory.usememorydomain("CARTROM")
-		return
-	end
-	memory.usememorydomain("System Bus")
-end
+roomsegment = 1
+dir = 1
+prevname = ""
+roomdelay = 0
 while true do
 	if emu.getsystemid() ~= "SNES" then
 		goto continue
@@ -501,14 +490,11 @@ while true do
 		goto continue
 	end
 	if first then
-		goodcore = memory.usememorydomain("System Bus")
-		if goodcore == false then
-			memory.usememorydomain("CARTROM")
-		end
+		memory.usememorydomain("CARTROM")
 		first = false
 		if hash == "" or hash:match("%W") then
 			setup()
-			if hash:match("%W") or hash == "" then
+			if hash == "" then
 				client.SetGameExtraPadding(0,0,0,0)
 				goto continue
 			end
@@ -516,20 +502,16 @@ while true do
 		getconfig()
 		if cfg["window"] then
 			if win == 0 then
-				form = forms.newform(142,224)
-				win = forms.pictureBox(form, nil, nil, 142, 224)
+				form = forms.newform(144,225)
+				win = forms.pictureBox(form, nil, nil, 144, 225)
 				client.SetGameExtraPadding(0,0,0,0)
 			end
 			xoffset = 0
 			xmax = 142
 		else
-			client.SetGameExtraPadding(0,0,142,0)
+			client.SetGameExtraPadding(0,0,144,1)
 		end
 		event.onexit(done, "done")
-	end
-	pressed = input.get()
-	if (pressed["Number1"]) then
-		console.log("1")
 	end
 	forms.clear(win, "black")
 	map(cfg["maprow"])
@@ -540,9 +522,43 @@ while true do
 	ob = bossesdead() .. "/" .. totobj
 	textright(0,cfg["seedrow"],hash,"white")
 	textright(0,cfg["diffrow"],ob .. " "..diff,"white")
-	room_name = room()
 	boss()
-	textright(0,cfg["roomrow"],room_name,"white")
+	if vanilla == false then
+		room_name = room()
+		if room_name ~= prevname then
+			prevname = room_name
+			roomsegment = 1
+			dir = 1
+		end
+		rlen = string.len(room_name)
+		shortname = room_name
+		maxlen = 22
+		if rlen > maxlen then
+			roomsegment = roomsegment +dir
+			if roomsegment + maxlen == rlen then
+				if dir ~= 0 then
+					dir = -1
+				else
+					-- stall longer at the ends
+					dir = 0
+				end
+			elseif roomsegment == 1 then
+				if dir ~= 0 then
+					dir = 1
+				else
+					-- stall longer at the ends
+					dir = 0
+				end
+			end
+			shortname = string.sub(room_name, roomsegment, roomsegment+maxlen)
+		end
+		
+		if cfg["window"] then
+			textright(0,cfg["roomrow"],shortname,"white")
+		else
+			textright(0,cfg["roomrow"],room_name,"white")
+		end
+	end
 	forms.refresh(win)
 	frames = 0
 	::continue::
