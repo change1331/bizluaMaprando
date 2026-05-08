@@ -61,21 +61,25 @@ function bigletter(addr)
 	str = ""
 	c = rom_readbyte(addr)
 	i = 2
-	b = 0
-	-- length of all big letter strings
 	lastc = c
 	while i < 0x40 do
 		if c < 0x0040 then
-			c = c -0x0020
-			str = str .. string.char(c+65)
+			-- a-p
+			c=c+0x41
+			str = str .. string.char(c)
 		elseif c == 127 then
 			-- we only care about the last part of the string
 			if lastc ==c then
 				str = ""
 			end
 		else
-			c = c -0x0030
-			str = str .. string.char(c+65)
+			--q-z
+			c=c+17
+			if c == 108 then
+				--allow +
+				c=43
+			end
+			str = str .. string.char(c)
 		end
 		lastc = c
 		c = rom_read_u16(addr+i)
@@ -405,19 +409,27 @@ function setup()
 		return
 	end
 	hash = mem(0xdffef0, 0)
-	diff = bigletter(0xceb240 + (224 - 128) * 0x40)
-	if diff == "VERYHARD" then
-		diff = "VHARD"
-	elseif diff == "CUSTOM" then
-		diff = "CUST"
-	elseif diff == "EXTREME" then
-		diff = "XTRM"
-	elseif diff == "INSANE" then
-		diff = "INSN"
+	skill = bigletter(0xceb240 + (226 - 128) * 0x40)
+	plus = ""
+	if string.find(skill, "+") ~= nil then
+		skill = string.sub(skill, 1,string.len(skill)-1)
+		plus = "+"
 	end
-	prog = bigletter(0xceb240 + (226 - 128) * 0x40)
+	if skill == "VERYHARD" then
+		skill = "VHARD"
+	elseif skill == "CUSTOM" then
+		skill = "CUST"
+	elseif skill == "EXTREME" then
+		skill = "XTRM"
+	elseif skill == "INSANE" then
+		skill = "INSN"
+	end
+	skill = skill .. plus
+	prog = bigletter(0xceb240 + (228 - 128) * 0x40)
 	if prog == "TECHNICAL" then
 		prog = "TECH"
+	elseif prog == "NORMAL" then
+		prog = "NORM"
 	elseif prog == "CHALLENGE" then
 		prog = "CHAL"
 	elseif prog == "DESOLATE" then
@@ -425,7 +437,7 @@ function setup()
 	elseif prog == "CUSTOM" then
 		prog = "CUST"
 	end
-	qol = bigletter(0xceb240 + (228 - 128) * 0x40)
+	qol = bigletter(0xceb240 + (230 - 128) * 0x40)
 	if qol == "DEFAULT" then
 		qol = "DEF"
 	elseif qol == "CUSTOM" then
@@ -466,7 +478,7 @@ function setup()
 	else
 		itemenum[0x2000]="speed"
 	end
-	diff = diff .. " " .. prog .. " " .. qol
+	diff = skill .. " " .. prog .. " " .. qol
 end
 
 goodcore = true
