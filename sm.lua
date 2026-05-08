@@ -180,7 +180,8 @@ bossset =0
 bossrefresh = 0
 function boss()
 	-- objectives
-	if noobj or #objflags == 0 or bossesdead() == #objflags then
+	if bossesset == false then
+	elseif noobj or #objflags == 0 or bossesdead() == #objflags then
 		motherbrain()
 	else
 		if #objflags > 4  and bossrefresh > 5 then
@@ -200,11 +201,9 @@ function boss()
 				y = cfg[b][2]
 				sc = cfg[b][3]
 				if val&f~=0 then
-					--text(x,y,i, "white")
 					draw(x, y, objflags[seti][1], sc)
 					drawequip(x, y, sc)
 				else
-					--text(x,y,i+1, "white", 56)
 					draw(x, y, objflags[seti][1], sc)
 				end
 			end
@@ -384,18 +383,39 @@ mapenum = {
 	{"M","blue"},
 	{"T","brown"},
 }
+bosspreset = {
+    "None",
+    "Bosses",
+    "MiniBosses",
+    "Chozos",
+    "Pirates",
+    "Metroids",
+    "Random",
+}
+bosspreset[0] = "Custom"
+mappreset = {
+    "Vanilla",
+    "Small",
+    "Standard",
+    "Wild",
+}
+mappreset[0xFF] = ""
 frames = 0
 hash = ""
-diff = ""
+skill = ""
+prog = ""
+qol = ""
 met = ""
+maplayout = ""
 objflags = {}
 vanilla = false
 noobj = false
 reqanimals = false
+bossesset = false
 function vansetup()
 	vanilla = true
 	hash = "SuperMetroid"
-	diff = "Vanilla"
+	prog = "Vanilla"
 	objflags[1] = bossenum[5]
 	objflags[2] = bossenum[7]
 	objflags[3] = bossenum[10]
@@ -443,7 +463,26 @@ function setup()
 	elseif qol == "CUSTOM" then
 		qol = "CUST"
 	end
-
+	bp = rom_readbyte(0xdfff0c)
+	if bp == 0xFF or (bp ~= 0 and bp ~= 7) then
+		setupboss()
+	end
+	mp = rom_readbyte(0xdfff0d)
+	maplayout = mappreset[mp]
+	extras=rom_readbyte(0xdfff05)
+	if extras&1~=0 then
+		itemenum[0x400]="walljump"
+	end
+	if extras&2~=0 then
+		--split boosters
+		itemenum[0x40]="blue"
+		itemenum[0x80]="spark"
+	else
+		itemenum[0x2000]="speed"
+	end
+end
+function setupboss()
+	bossesset = true
 	nophantoon = true
 	reqanimals= rom_read_u32(0xa1f000)==0xffff
 	val=rom_read_u16(0x83AAD2)
@@ -459,7 +498,7 @@ function setup()
 					objflags[i+1] = boss
 				end
 				if m == 0xD82B and f == 1 then
-					--nophantoon = false
+					nophantoon = false
 				end
 			end
 			i=i+1
@@ -467,18 +506,6 @@ function setup()
 			f = rom_read_u16(0x8FEBE8+i*2)
 		end
 	end
-	extras=rom_readbyte(0xdfff05)
-	if extras&1~=0 then
-		itemenum[0x400]="walljump"
-	end
-	if extras&2~=0 then
-		--split boosters
-		itemenum[0x40]="blue"
-		itemenum[0x80]="spark"
-	else
-		itemenum[0x2000]="speed"
-	end
-	diff = skill .. " " .. prog .. " " .. qol
 end
 
 goodcore = true
@@ -530,10 +557,15 @@ while true do
 	items()
 	beams()
 	flags()
+	if mainmemory.readbyte(0x0727) == 0xB and #objflags == 0 then
+		setupboss()
+	end
 	totobj = ((noobj or #objflags) == 0 and 0) or #objflags
 	ob = bossesdead() .. "/" .. totobj
-	textright(0,cfg["seedrow"],hash,"white")
+	textright(0,cfg["seedrow"],maplayout .. " " .. hash,"white")
+	diff = skill .. " " .. prog .. " " .. qol
 	textright(0,cfg["diffrow"],ob .. " "..diff,"white")
+	
 	boss()
 	if vanilla == false then
 		room_name = room()
