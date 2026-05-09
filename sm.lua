@@ -181,6 +181,7 @@ bossrefresh = 0
 function boss()
 	-- objectives
 	if bossesset == false then
+		text(2.5,2,"random\nor\ncustom","white")
 	elseif noobj or #objflags == 0 or bossesdead() == #objflags then
 		motherbrain()
 	else
@@ -372,7 +373,7 @@ bossenum = {
 	{"metroidroom",0xD822, 4},
 	{"metroidroom",0xD822, 8},
 }
-mb={"motherbrain2",0xD82D, 1}
+mb={"motherbrain3",0xD82D, 1}
 animals={"animals",0xD821, 0x80}
 -- maps & color
 mapenum = {
@@ -400,6 +401,10 @@ mappreset = {
     "Wild",
 }
 mappreset[0xFF] = ""
+mother = {}
+mother[0xEA] = "motherbrain1"
+mother[0xA9] = "motherbrain2"
+mother[0x01] = "motherbrain3"
 frames = 0
 hash = ""
 skill = ""
@@ -469,6 +474,7 @@ function setup()
 	end
 	mp = rom_readbyte(0xdfff0d)
 	maplayout = mappreset[mp]
+	mb[1] = mother[rom_readbyte(0xA9AF04)]
 	extras=rom_readbyte(0xdfff05)
 	if extras&1~=0 then
 		itemenum[0x400]="walljump"
