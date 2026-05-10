@@ -418,6 +418,7 @@ noobj = false
 reqanimals = false
 bossesset = false
 function vansetup()
+	bossesset = true
 	vanilla = true
 	hash = "SuperMetroid"
 	prog = "Vanilla"
