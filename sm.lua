@@ -230,9 +230,9 @@ function motherbrain()
 		end
 	else
 		m = mb[1]
-		x = cfg[m][1]
-		y = cfg[m][2]
-		sc = cfg[m][3]
+		x = cfg["motherbrain2"][1]
+		y = cfg["motherbrain2"][2]
+		sc = cfg["motherbrain2"][3]
 		draw(x,y,m,sc)
 	end
 end
