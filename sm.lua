@@ -527,6 +527,7 @@ win = 0
 roomsegment = 1
 dir = 1
 prevname = ""
+room_name = ""
 roomdelay = 0
 while true do
 	if emu.getsystemid() ~= "SNES" then
@@ -574,8 +575,11 @@ while true do
 	textright(0,cfg["diffrow"],ob .. " "..diff,"white")
 	
 	boss()
+	
 	if vanilla == false then
-		room_name = room()
+		if mainmemory.readbyte(0x0998) == 8 then
+			room_name = room()
+		end
 		if room_name ~= prevname then
 			prevname = room_name
 			roomsegment = 1
