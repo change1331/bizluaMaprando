@@ -428,14 +428,24 @@ function vansetup()
 	objflags[4] = bossenum[15]
 	itemenum[0x2000]="speed"
 end
+multi = 0
+vanilla = false
 function setup()
 	met = mem(0x7fc0, 0x30)
-	if met ~= "SUPERMETROID MAPRANDO" then
+	if string.sub(met,1,4) == "SMMR" then
+		-- prac hack
+		vanilla = false
+		multi = 2
+	elseif met ~= "SUPERMETROID MAPRANDO" then
+		vanilla = true
+	end
+	if vanilla then
 		vansetup()
 		return
 	end
+	
 	hash = mem(0xdffef0, 0)
-	skill = bigletter(0xceb240 + (226 - 128) * 0x40)
+	skill = bigletter(0xceb240 + (226 - multi - 128) * 0x40)
 	plus = ""
 	if string.find(skill, "+") ~= nil then
 		skill = string.sub(skill, 1,string.len(skill)-1)
@@ -451,7 +461,7 @@ function setup()
 		skill = "INSN"
 	end
 	skill = skill .. plus
-	prog = bigletter(0xceb240 + (228 - 128) * 0x40)
+	prog = bigletter(0xceb240 + (228 - multi -  128) * 0x40)
 	if prog == "TECHNICAL" then
 		prog = "TECH"
 	elseif prog == "NORMAL" then
@@ -463,7 +473,7 @@ function setup()
 	elseif prog == "CUSTOM" then
 		prog = "CUST"
 	end
-	qol = bigletter(0xceb240 + (230 - 128) * 0x40)
+	qol = bigletter(0xceb240 + (230 - multi - 128) * 0x40)
 	if qol == "DEFAULT" then
 		qol = "DEF"
 	elseif qol == "CUSTOM" then
