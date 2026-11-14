@@ -45,33 +45,4 @@ cfg["diffrow"] = 12
 cfg["roomrow"] = 13
 
 cfg["window"] = false
-cfg["version"] = "1.1"
-
-oldconfig = false
-function getconfig() 
-    f = io.open("config.json", "r")
-    if f ~= nil then
-        s = f:read("*all")
-        f:close()
-        newcfg = json.decode(s)
-		if newcfg["version"] ~= cfg["version"] then
-			oldconfig = true
-			console.log("old cofig json detected, using default settings")
-		else
-			cfg = newcfg
-		end
-    end
-end
-
-function writeconfig()
-	if oldconfig then
-		console.log("old config json detected, not overwriting old json")
-		return
-	end
-    f = io.open("config.json", "w")
-    if f ~= nil then
-        s = json.encode(cfg)
-        f:write(s)
-        f:close()
-    end
-end
+cfg["version"] = "1.2"

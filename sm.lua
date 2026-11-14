@@ -1,3 +1,5 @@
+require("json")
+require("cfg")
 -- first run through
 first=true
 -- width and height of icons
@@ -5,7 +7,6 @@ xoffset=256
 xmax=256+144
 w=16
 h=16
-require("cfg")
 function snes2pc(addr)
 	a = addr >> 1
 	a = a & 0x3F8000
@@ -302,21 +303,6 @@ function flags()
 		end
 	end
 end
-function timer()
-	msecperframe = 100 / 60.09881186
-	frames = memory.readbyte(0x1E10, "CARTRAM")
-	tmsecs = frames * msecperframe
-	secs = tmsecs / 100
-	msecs = tmsecs % 100
-	mins = secs / 60
-	secs = secs % 60
-	hours = mins / 60
-	mins = mins % 60
-
-	time = string.format("%02d:%02d:%02d:%02d",math.floor(hours),
-		math.floor(mins),math.floor(secs),math.floor(msecs))
-	return time
-end
 
 beamenum = {}
 --c 1-3 r1-2
@@ -430,7 +416,39 @@ function vansetup()
 end
 multi = 0
 vanilla = false
+function getconfig()
+    f = io.open("config.json", "r")
+    if f ~= nil then
+        s = f:read("*all")
+        f:close()
+        newcfg = json.decode(s)
+		if newcfg["version"] ~= cfg["version"] then
+            console.log("old config json detected, backing up old json and creating default json")
+			writeconfig()
+            fbk = io.open("config.json.bk", "w")
+            if fbk ~= nil then
+                fbk:write(s)
+                fbk:close()
+            end
+		else
+			cfg = newcfg
+		end
+	else
+		console.log("new config created")
+		writeconfig()
+    end
+end
+
+function writeconfig()
+    f = io.open("config.json", "w")
+    if f ~= nil then
+        s = json.encode(cfg)
+        f:write(s)
+        f:close()
+    end
+end
 function setup()
+	getconfig()
 	met = mem(0x7fc0, 0x30)
 	if string.sub(met,1,4) == "SMMR" then
 		-- prac hack
