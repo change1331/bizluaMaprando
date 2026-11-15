@@ -4,7 +4,8 @@ require("cfg")
 first=true
 -- width and height of icons
 xoffset=256
-xmax=256+144
+height=225
+width=144
 w=16
 h=16
 function snes2pc(addr)
@@ -50,7 +51,7 @@ function mem0(addr)
 			str = str .. string.char(c+63)
 		elseif c > 53 and c < 64 then
 			str = str .. string.char(c-6)
-		else
+		elseif font[c] ~= nil then
 			str = str .. font[c]
 		end
 		c = rom_readbyte(addr+i)
@@ -110,9 +111,9 @@ end
 function textright(x, y, str, clr, size)
 	sz = (size == nil and 10) or size
 	if win ~= 0 then
-		forms.drawString(win,xmax-x*w,y*h,str,clr,nil,sz,nil,nil,"right")
+		forms.drawString(win,width+xoffset-x*w,y*h,str,clr,nil,sz,nil,nil,"right")
 	else
-		gui.drawString(xmax-x*w,y*h,str,clr,nil,sz,nil, nil, "right")
+		gui.drawString(width+xoffset-x*w,y*h,str,clr,nil,sz,nil, nil, "right")
 	end
 end
 function rect(x,y,color, size)
@@ -449,6 +450,8 @@ function writeconfig()
 end
 function setup()
 	getconfig()
+	width = cfg["width"]
+	height = cfg["height"]
 	met = mem(0x7fc0, 0x30)
 	if string.sub(met,1,4) == "SMMR" then
 		-- prac hack
@@ -577,14 +580,13 @@ while true do
 		getconfig()
 		if cfg["window"] then
 			if win == 0 then
-				form = forms.newform(144,225)
-				win = forms.pictureBox(form, nil, nil, 144, 225)
+				form = forms.newform(width,height)
+				win = forms.pictureBox(form, nil, nil, width, height)
 				client.SetGameExtraPadding(0,0,0,0)
 			end
 			xoffset = 0
-			xmax = 142
 		else
-			client.SetGameExtraPadding(0,0,144,1)
+			client.SetGameExtraPadding(0,0,width,1)
 		end
 		event.onexit(done, "done")
 	end

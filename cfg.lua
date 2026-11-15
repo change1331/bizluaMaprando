@@ -45,4 +45,6 @@ cfg["diffrow"] = 12
 cfg["roomrow"] = 13
 
 cfg["window"] = false
-cfg["version"] = "1.2"
+cfg["width"]=144
+cfg["height"]=225
+cfg["version"] = "1.3"
