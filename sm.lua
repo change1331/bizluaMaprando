@@ -4,8 +4,6 @@ require("cfg")
 first=true
 -- width and height of icons
 xoffset=256
-height=225
-width=144
 w=16
 h=16
 function snes2pc(addr)
@@ -27,7 +25,7 @@ function mem(addr, zero)
 	str = ""
 	c = rom_readbyte(addr)
 	i = 1
-	-- 0 terminated strings
+	-- zero terminated strings
 	while c ~= zero do
 		str = str .. string.char(c)
 		c = rom_readbyte(addr+i)
@@ -101,23 +99,23 @@ function draw(x,y,img, scale)
 	end
 end
 function text(x,y,str,clr,size)
-	sz = (size == nil and 10) or size
+	sz = (size == nil and cfg["fontsize"]) or size
 	if win ~= 0 then
-		forms.drawString(win,xoffset+x*w,y*h,str,clr,nil,sz)
+		forms.drawString(win,xoffset+x*w,y*h,str,clr,nil,sz, cfg["font"])
 	else
-		gui.drawString(xoffset+x*w,y*h,str,clr,nil,sz)
+		gui.drawString(xoffset+x*w,y*h,str,clr,nil,sz, cfg["font"])
 	end
 end
 function textright(x, y, str, clr, size)
-	sz = (size == nil and 10) or size
+	sz = (size == nil and cfg["fontsize"]) or size
 	if win ~= 0 then
-		forms.drawString(win,width+xoffset-x*w,y*h,str,clr,nil,sz,nil,nil,"right")
+		forms.drawString(win,cfg["width"]+xoffset-x*w,y*h,str,clr,nil,sz,cfg["font"],nil,"right")
 	else
-		gui.drawString(width+xoffset-x*w,y*h,str,clr,nil,sz,nil, nil, "right")
+		gui.drawString(cfg["width"]+xoffset-x*w,y*h,str,clr,nil,sz,cfg["font"], nil, "right")
 	end
 end
 function rect(x,y,color, size)
-	sz = (size == nil and 10) or size
+	sz = (size == nil and cfg["fontsize"]) or size
 	if win ~= 0 then
 		forms.drawRectangle(win, xoffset+x*w, y*h+2, sz, sz,color, "black")
 	else
@@ -355,10 +353,10 @@ bossenum = {
 	{"metalpiratesroom",0xD823, 0x10},
 	{"acidchozostatue",0xD821, 0x10},
 	{"ridley",0xD82A, 1},
-	{"metroidroom",0xD822, 1},
-	{"metroidroom",0xD822, 2},
-	{"metroidroom",0xD822, 4},
-	{"metroidroom",0xD822, 8},
+	{"metroidroom1",0xD822, 1},
+	{"metroidroom2",0xD822, 2},
+	{"metroidroom3",0xD822, 4},
+	{"metroidroom4",0xD822, 8},
 }
 mb={"motherbrain3",0xD82D, 1}
 animals={"animals",0xD821, 0x80}
@@ -450,8 +448,6 @@ function writeconfig()
 end
 function setup()
 	getconfig()
-	width = cfg["width"]
-	height = cfg["height"]
 	met = mem(0x7fc0, 0x30)
 	if string.sub(met,1,4) == "SMMR" then
 		-- prac hack
@@ -555,11 +551,8 @@ function done()
 	event.unregisterbyname("done")
 end
 win = 0
-roomsegment = 1
-dir = 1
 prevname = ""
 room_name = ""
-roomdelay = 0
 while true do
 	if emu.getsystemid() ~= "SNES" then
 		goto continue
@@ -580,13 +573,13 @@ while true do
 		getconfig()
 		if cfg["window"] then
 			if win == 0 then
-				form = forms.newform(width,height)
-				win = forms.pictureBox(form, nil, nil, width, height)
+				form = forms.newform(cfg["width"],cfg["height"])
+				win = forms.pictureBox(form, nil, nil, cfg["width"], cfg["height"])
 				client.SetGameExtraPadding(0,0,0,0)
 			end
 			xoffset = 0
 		else
-			client.SetGameExtraPadding(0,0,width,1)
+			client.SetGameExtraPadding(0,0,cfg["width"],1)
 		end
 		event.onexit(done, "done")
 	end
@@ -615,31 +608,8 @@ while true do
 			roomsegment = 1
 			dir = 1
 		end
-		rlen = string.len(room_name)
-		shortname = room_name
-		maxlen = 22
-		if rlen > maxlen then
-			roomsegment = roomsegment +dir
-			if roomsegment + maxlen == rlen then
-				if dir ~= 0 then
-					dir = -1
-				else
-					-- stall longer at the ends
-					dir = 0
-				end
-			elseif roomsegment == 1 then
-				if dir ~= 0 then
-					dir = 1
-				else
-					-- stall longer at the ends
-					dir = 0
-				end
-			end
-			shortname = string.sub(room_name, roomsegment, roomsegment+maxlen)
-		end
-		
-		if cfg["window"] then
-			textright(0,cfg["roomrow"],shortname,"white")
+		if cfg["roomver"] == 1 then
+			textright(0,cfg["roomrow"],string.sub(room_name, 1, cfg["roomlen"]+1,"white"))
 		else
 			textright(0,cfg["roomrow"],room_name,"white")
 		end
